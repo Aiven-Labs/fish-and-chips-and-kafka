@@ -14,10 +14,6 @@ presented by Tibs_
 
 A link to the video recording will be provided when that is available.
 
-The demonstration programs from the talk are in `src`_
-
-.. _`src`: ../src/
-
 Useful links
 ~~~~~~~~~~~~
 
@@ -63,8 +59,8 @@ Jay Kreps that explains the concepts behind Kafka. It is very worth a read.
 The demos
 ~~~~~~~~~
 
-The source code for the demonstration programs is in the `src <src/>`_ directory. See
-the `readme.rst <src/readme.rst>`_ for how to run them.
+The source code for the demonstration programs is in the `src <../src/>`_
+directory. See its `README <../src/README.md>`_ for how to run them.
 
 The videos of the demos (which I use during the talk) are in a separate
 repository, at https://github.com/tibs/fish-and-chips-and-kafka-videos (it
