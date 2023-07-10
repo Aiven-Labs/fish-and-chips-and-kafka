@@ -1,9 +1,5 @@
 # Demo code for "Fish and Chips and Apache Kafka®"
 
-<div class="contents">
-
-</div>
-
 ## What we have here
 
 Two "proof of concept" programs:
