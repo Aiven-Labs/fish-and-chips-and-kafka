@@ -14,9 +14,9 @@ presented by Tibs_
 
 A link to the video recording will be provided when that is available.
 
-The demonstration programs from the talk are in src_
+The demonstration programs from the talk are in `src`_
 
-.. _src: ../src
+.. _`src`: ../src
 
 Useful links
 ~~~~~~~~~~~~
