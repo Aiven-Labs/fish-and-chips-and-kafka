@@ -1,0 +1,8 @@
+src/venv
+src/__pycache__
+src/.python-version
+src/certs
+src/*.log
+
+slides/venv
+slides/.rst.build_temp

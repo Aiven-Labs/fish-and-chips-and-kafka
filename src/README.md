@@ -313,7 +313,7 @@ Let me know if you play with these ideas!
 
 You may also be interested in
 
-- My Aiven blog post [Get things done with the Aiven
+- The Aiven blog post [Get things done with the Aiven
   CLI](https://aiven.io/blog/aiven-cmdline)
 - The Aiven github repository [Python Jupyter Notebooks for Apache
   Kafka®](https://github.com/aiven/python-notebooks-for-apache-kafka)
@@ -322,6 +322,8 @@ You may also be interested in
 - The [Aiven for Apache
   Kafka®](https://docs.aiven.io/docs/products/kafka.html) section of the
   [Aiven developer documentation](https://docs.aiven.io/index.html)
+- The [Apache Kafka®](https://aiven.io/developer/kafka) section of the [Aiven
+  developer center](https://aiven.io/developer) for longer articles.
 
 # Thanks
 
@@ -330,4 +332,15 @@ long-running, external asyncio
 functionality](https://stackoverflow.com/questions/71631247/textual-python-tui-enabling-long-running-external-asyncio-functionality)
 for helping me understand some things when I was first writing these demo programs.
 
+--------
 
+  |cc-attr-sharealike|
+
+  This talk and its related files are released under a `Creative Commons
+  Attribution-ShareAlike 4.0 International License`_. The source code for the
+  demo programs is dual-licensed as CC Attribution Share Alike and MIT.
+
+.. |cc-attr-sharealike| image:: ../src/images/cc-attribution-sharealike-88x31.png
+   :alt: CC-Attribution-ShareAlike image
+
+.. _`Creative Commons Attribution-ShareAlike 4.0 International License`: http://creativecommons.org/licenses/by-sa/4.0/
