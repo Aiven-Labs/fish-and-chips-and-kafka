@@ -198,7 +198,6 @@ def main(kafka_uri, certs_dir):
     app.run()
 
     logging.info('ALL DONE')
-    print('ALL DONE')
 
 
 if __name__ == '__main__':
