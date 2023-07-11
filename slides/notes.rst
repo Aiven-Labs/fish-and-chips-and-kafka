@@ -944,8 +944,6 @@ Written in reStructuredText_, converted to PDF using rst2pdf_
 Slides and accompanying material |cc-attr-sharealike| at
 https://github.com/aiven-labs/fish-and-chips-and-kafka
 
-QR code needs updating...
-
 .. image:: images/qr_fish_chips_kafka.png
     :align: right
     :scale: 90%
