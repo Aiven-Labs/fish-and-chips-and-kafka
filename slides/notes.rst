@@ -324,7 +324,7 @@ Libraries
 To talk to Kafka and manage topics:
 
 * ``aiokafka``: https://github.com/aio-libs/aiokafka
-* ``kafka-python``: https://github.com/dpkp/kafka-python, for creating
+* ``kafka-python``: https://github.com/dpkp/kafka-python, for creating topics
 
 To create our Terminal UI
 
