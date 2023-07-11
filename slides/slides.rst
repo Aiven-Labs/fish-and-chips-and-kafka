@@ -13,11 +13,7 @@ Fish and Chips and Apache Kafka\ :sup:`®`
     Slides and source code at
     https://github.com/aiven-labs/fish-and-chips-and-kafka
 
-    Tutorial at https://aiven.io/developer/fish-and-chips-and-kafka
-
-    Me at https://aiven.io/community/devrel/tibs
-
-    *or something*
+    Tutorial still to come...
 
 .. footer::
 
@@ -692,34 +688,3 @@ QR code needs updating...
 .. _rst2pdf: https://rst2pdf.org/
 .. _Aiven: https://aiven.io/
 
-
-
-Unused Redis slides
--------------------
-
-
-Start of day
-------------
-
-.. raw:: pdf
-
-   Spacer 0 10
-
-.. image:: images/homework-redis-1.svg
-   :width: 70%
-
-Cod and chips
--------------
-
-.. raw:: pdf
-
-   Spacer 0 10
-
-.. image:: images/homework-redis-2.svg
-   :width: 100%
-
-Plaice and chips
-----------------
-
-.. image:: images/homework-redis-3.svg
-   :width: 90%
