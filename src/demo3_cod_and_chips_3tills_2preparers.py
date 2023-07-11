@@ -23,7 +23,6 @@ from ssl import SSLContext
 
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Footer
 
 from demo_helpers import setup_topics
 from demo_helpers import create_producer
@@ -124,7 +123,6 @@ class TillWidget(DemoWidget):
         await wait_for_everyone(f'Producer {self}')
         self.add_line('Everyone is ready')
 
-        count = 0
         try:
             while True:
                 await self.make_order(producer)
@@ -283,6 +281,8 @@ def main(kafka_uri, certs_dir):
     certs_path = pathlib.Path(certs_dir)
 
     if kafka_uri is None:
+        print('The URI for the Kafka service is required')
+        print('Set KAFKA_SERVICE_URI or use the -k switch')
         logging.error('The URI for the Kafka service is required')
         logging.error('Set KAFKA_SERVICE_URI or use the -k switch')
         return -1
@@ -295,6 +295,8 @@ def main(kafka_uri, certs_dir):
             keyfile=certs_path / "service.key",
         )
     except Exception as e:
+        print(f'Error loading SSL certificates from {certs_path}')
+        print(f'{e.__class__.__name__} {e}')
         logging.error(f'Error loading SSL certificates from {certs_path}')
         logging.error(f'{e.__class__.__name__} {e}')
         return -1
@@ -306,7 +308,7 @@ def main(kafka_uri, certs_dir):
     app.run()
 
     logging.info('ALL DONE')
-
+    print('ALL DONE')
 
 
 if __name__ == '__main__':

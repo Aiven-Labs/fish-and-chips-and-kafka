@@ -276,7 +276,7 @@ async def create_consumer(
             value_deserializer=lambda v: json.loads(v.decode('ascii')),
         )
     except Exception as e:
-        logging.error(f'Error creating comsumer {name}: {e.__class__.__name__} {e}')
+        logging.error(f'Error creating consumer {name}: {e.__class__.__name__} {e}')
         return
     logging.info(f'Consumer {name} created')
 
