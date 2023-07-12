@@ -295,16 +295,16 @@ avn service terminate KAFKA_FISH_DEMO
 
 Homework projects suggested in the talk:
 
-1.  Use a JDBC Kafka Connector to send orders from the main topic to a
-    PostgreSQL® database, and then add a widget to the demo that queries
-    that database periodically and updates a panel with some summary
-    information (perhaps as simple as the total count of cod, chip and
-    plaice orders).
-2.  Use a Redis® cache to simulate the cook preparing food for the hot
+1.  Use a Redis® cache to simulate the cook preparing food for the hot
     cabinet. There's a brief summary in the slides. For extra credit,
     also have the cook "wake up" periodically to check if they need to
     cook more cod or chips to keep the amount in the hot cabinet at the
     right level.
+2.  Use a JDBC Kafka Connector to send orders from the main topic to a
+    PostgreSQL® database, and then add a widget to the demo that queries
+    that database periodically and updates a panel with some summary
+    information (perhaps as simple as the total count of cod, chip and
+    plaice orders).
 
 Let me know if you play with these ideas!
 
@@ -312,13 +312,24 @@ Let me know if you play with these ideas!
 
 [`demo5_output_to_pg.py`](demo5_output_to_pg.py)
 
-The only change to the source code (from that in
-[`demo1_cod_and_chips.py`](demo1_cod_and_chips.py)) is to add JSON schema
-information to our messages.
+This is based on
+[`demo1_cod_and_chips.py`](demo1_cod_and_chips.py)).
+
+We need to make the following changes to the code:
+
+* Add JSON schema information to our messages, since this is needed if we're
+  going to use JSON messages
+* Simplify the message format a bit, since the JDBC connector only supports
+  basic PostgreSQL datatype
+* Add a timestamp, which can be used as a unique key in the database table. We
+  *could* used the `count` value, but that's going to restart from 0 each time
+  we run the demo, and things would fail when we try to insert a record with
+  an already existing key.
 
 > **Note** If we were using Avro messages, we could use Karapace to "tell"
 > both ends of the data process what schema was being used for messages, but
-> the JSON mechanism doesn't currently support that.
+> the JSON mechanism doesn't currently support that, so we need to have an
+> explicit schema in each message.
 
 * Aiven documentation: [Create a JDBC sink connector from Apache Kafka® to
   another database](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink)
@@ -351,21 +362,31 @@ and again wait for it to finish starting up:
 avn service wait $PG_SERVICE_NAME
 ```
 
-Next we need to connect to the PostgreSQL database and set up a schema.
+Next we need to connect to the PostgreSQL database and set up a schema. Here
+I'm using the `avn` command to connect to the database, but you could equally
+use `psql` or whatever other tool you prefer.
 
-> **EDIT EDIT EDIT** Here we're using the `avn` command - does that need me to
-> have installed `psql`? Should I talk about that?
+> **Note** If you go to the Connection Information page for the Aiven for
+> PostgreSQL service, the **Quick Connect** button can be used to show the
+> ways to connect with a variety of tools.
 
 ```shell
 avn service cli $PG_SERVICE_NAME
 ```
 
 ```sql
-CREATE TABLE demo5_cod_and_chips (count int PRIMARY KEY, "order" jsonb);
+CREATE TABLE demo5_cod_and_chips (
+   "order_time" bigint primary key,
+   "count" integer not null,
+   "order" text[] not null);
 ```
 
 > **Note** we [need to quote the column name `order` because it is also a
-> PostgreSQL keyword](https://stackoverflow.com/questions/7651417/escaping-keyword-like-column-names-in-postgres).
+> PostgreSQL keyword](https://stackoverflow.com/questions/7651417/escaping-keyword-like-column-names-in-postgres),
+> so we might as well quote all of the column names.
+>
+> `int64` in the JSON schema maps to `bigint` in PostgreSQL, and an array of
+> strings is `text[]`.
 
 Since we're going to use a JDBC connector with our Kafka, that means using a
 service integration (between Kafka and our PostrgreSQL database), and so we
@@ -405,7 +426,7 @@ following as a template:
     "insert.mode": "insert",
     "delete.enabled": "false",
     "pk.mode": "record_value",
-    "pk.fields": "count",
+    "pk.fields": "order_time",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter"
 }
 ```
@@ -419,10 +440,10 @@ following as a template:
    Since that includes `-` characters, we want to set `table.name.normalize`
    to `true`, which means the table name will be `demo5_cod_and_chips`
 
-3. The value for `pk.fields` is `"count"`, and that together with the value
-   for `pk.mode` says to use the `count` field from the message as its key.
+3. The value for `pk.fields` is `"order_time"`, and that together with the value
+   for `pk.mode` says to use the `order_time` field from the message as its key.
 
-4. We set `auto.create` for `false` because we have already created our target
+4. We set `auto.create` to `false` because we have already created our target
    table, and don't need it creating for us. Similarly, we set `auto.evolve`
    to `false` because we don't want its schema to be changed for us.
 
@@ -444,124 +465,35 @@ avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
 > generally easier to set it up correctly in a file with a text editor, and
 > then use that.
 
-
------------
-
-## Debugging the sink connector
-
-I'm trying to use a JSON structure with sub-structures, and it's quite
-possible I'm not allowed to do that. So let's make things simpler, by
-(temporarily) making our order structure into just:
-```json
-{ "count": <count>, "order": <count> }
+To get a list of the service connectors (as a JSON structure) attached to this Kafka, use:
+```shell
+avn service connector list $KAFKA_SERVICE_NAME
 ```
 
+To find out more about the connector, go to the Aiven console and the service
+page for our Kafka, and look at the **Connectors** tab. If there are errors,
+then you'll see a warning triangle symbol next to the "Tasks" value for the
+connector, and clicking on that will give the Java stacktrace.
 
+We can check the status of the connector as follows:
+```shell
+avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
+```
+
+If we now run the program:
+```shell
+./demo5_output_to_pg.py
+```
+it will work as we expect. As normal, we can stop it by typing `q`.
+
+If we then go back to the database, we can check the content of the table.
+For instance:
 ```sql
-create table demo5_cod_and_chips (count int PRIMARY KEY, "order" int);
+select * from demo5_cod_and_chips ;
 ```
 
-`int32` in the JSON schema shoud map to `int` in PG - `integer` in the scheam is not recognised.
-
-OK, let's try `auto.create` set to `true` and see what table it creates...
-
-...and now I have:
+might give something like:
 ```
-defaultdb=> select * from demo5_cod_and_chips;
- count | order
--------+-------
-     1 |     1
-     2 |     2
-     3 |     3
-     4 |     4
-     ...
-```
-
-which is a bit odd because that's the same table name I'd already created. Oh well.
-I suppose it might be an artefact of all the retrying I've been doing - check
-again when I'm re-running my "fixed" version of this from scratch.
-
-I guess the next thing to try is whether using `jsonb` as the datatype in the
-db table will work, if there is structure in the order (that is, going back to
-the original JSON schema).
-
-```sql
-drop table demo5_cod_and_chips;
-create table demo5_cod_and_chips (count int PRIMARY KEY, "order" jsonb);
-```
-
-If I then just run the demo program, the connector gets an exception that keys
-(in the database?) already exist. But there's nothing in the table (by
-inspection).
-
-So restart Kafka again - maybe I need to do that anyway to "clear" stuff.
-
-Finding 1: It definitely doesn't support my "array of arrays":
-```
-Unsupported schema type ARRAY for ARRAY values
-```
-
-So let's see what happens if I flatten that into an array of strings (so each
-part of an order is a single string - for instance, `"cod & chips"` - that's
-prettier than just `"cod, chips"`).
-
-(Whether that works or not, the other thing I'm interested in is whether we
-can put a (JSON as a) string into a JSON[B] field.)
-
-**And that works** - here's the result as a column of "array of strings"
-
-```sql
-defaultdb=> select * from demo5_cod_and_chips ;
- count |              order
--------+---------------------------------
-     1 | {chips}
-     2 | {"cod & chips","chips & chips"}
-     3 | {"cod & chips"}
-     4 | {"cod & chips"}
-     5 | {"cod & chips"}
-     6 | {"cod & chips"}
-     7 | {"cod & chips"}
-     8 | {"cod & chips"}
-(8 rows)
-```
-
-That table was created for me as:
-```
-defaultdb=> \d demo5_cod_and_chips
-        Table "public.demo5_cod_and_chips"
- Column |  Type   | Collation | Nullable | Default
---------+---------+-----------+----------+---------
- count  | integer |           | not null |
- order  | text[]  |           | not null |
-Indexes:
-    "demo5_cod_and_chips_pkey" PRIMARY KEY, btree (count)
-```
-
-And, entirely as expected, if I re-run the demo, I get errors because the
-`count` values are duplicated:
-```
-Batch entry 0 INSERT INTO "demo5_cod_and_chips"("count","order") VALUES(1,?) was aborted: ERROR: duplicate key value violates unique constraint "demo5_cod_and_chips_pkey"
-```
-So for this demo we probably want to add a *timestamp* as a key field.
-
-...let's do that...
-
-1. Add an `order_time` field (following the example at
-   https://github.com/aiven/jdbc-connector-for-apache-kafka/blob/master/docs/sink-connector.md#example) -
-   we type it as `int64` for simplicity.
-2. Change `pg_sink.json` to use the `order_time` filed as our key:
-   ```
-   "pk.fields": "order_time",
-   ```
-3. Delete and re-create the connector:
-   ```
-   avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
-   avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
-   ```
-
-And now I get the following table produced:
-```sql
-defaultdb=> select * from demo5_cod_and_chips ;
   order_time   | count |              order
 ---------------+-------+---------------------------------
  1689159326316 |     1 | {"cod & chips"}
@@ -571,19 +503,9 @@ defaultdb=> select * from demo5_cod_and_chips ;
  1689159332059 |     5 | {"cod & chips","chips & chips"}
  1689159333343 |     6 | {"cod & chips"}
 (6 rows)
-
-defaultdb=> \d demo5_cod_and_chips
-          Table "public.demo5_cod_and_chips"
-   Column   |  Type   | Collation | Nullable | Default
-------------+---------+-----------+----------+---------
- order_time | bigint  |           | not null |
- count      | integer |           | not null |
- order      | text[]  |           | not null |
-Indexes:
-    "demo5_cod_and_chips_pkey" PRIMARY KEY, btree (order_time)
 ```
 
-so that counts as success.
+-----------
 
 Discussion: is the array of strings actually a better representation of an
 order than an array of arrays of strings? In a real situation, we'd have
@@ -599,66 +521,7 @@ might have a lookup table from "menu item" to "necessary ingredients" -
 consider the traditional menu item "fish supper", which we'd probably
 interpret as meaning "cod and chips".
 
-One final thing to try: Let's delete that table, re-create it by hand, change
-`pg_sink.json` to have `"auto.create": "false",` again, and then re-run
-
-1. Edit `pg_sink.json`
-
-2. ```sql
-   drop table demo5_cod_and_chips ;
-   create table demo5_cod_and_chips (
-       "order_time" bigint primary key,
-       "count" integer not null,
-       "order" text[] not null);
-   ```
-
-3. ```shell
-   avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
-   avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
-   ```
-
-And yes, that works as I'd hope.
-
-To summarise:
-```json
-{
-    "name":"sink_fish_chips_json_schema",
-    "connector.class": "io.aiven.connect.jdbc.JdbcSinkConnector",
-    "topics": "demo5-cod-and-chips",
-    "table.name.normalize": "true",
-    "connection.url": "jdbc:postgresql://DB_HOST:DB_PORT/DB_NAME?sslmode=DB_SSL_MODE",
-    "connection.user": "DB_USERNAME",
-    "connection.password": "DB_PASSWORD",
-    "tasks.max":"1",
-    "auto.create": "false",
-    "auto.evolve": "false",
-    "insert.mode": "insert",
-    "delete.enabled": "false",
-    "pk.mode": "record_value",
-    "pk.fields": "order_time",
-    "value.converter": "org.apache.kafka.connect.json.JsonConverter"
-}
-```
-
-
 -----------
-
-
-To get a list of the service connectors (as a JSON structure) attached to this Kafka, use:
-```shell
-avn service connector list $KAFKA_SERVICE_NAME
-```
-
-To find out more about the connector, go to the Aiven console and the service
-page for our Kafka, and look at the **Connectors** tab. If there are errors,
-then you'll see a warning triangle symbol next to the "Tasks" value for the
-connector, and clicking on that will give the Java stacktrace.
-
-
-```shell
-avn service connector status $KAFKA_SERVICE_NAME <sink-name>
-```
-
 
 # Other resources
 
