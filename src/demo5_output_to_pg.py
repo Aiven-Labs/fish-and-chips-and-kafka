@@ -9,6 +9,7 @@ Note: writes log messages to the file demo5.log.
 """
 
 import asyncio
+import datetime
 import json
 import logging
 import os
@@ -50,53 +51,55 @@ KAFKA_SERVICE_URI = os.environ.get('KAFKA_SERVICE_URI')
 
 # A Kafka Connect JDBC sink using JSON needs the JSON messages to contain
 # their schema. So let's define a schema for our messages.
-DEBUGGING = False
-
-if DEBUGGING:
-    JSON_SCHEMA = {
-        "type": "struct",
-        "fields": [
-            {
-                "field": "count",
-                "type": "int32",        # int32 should map to PG int
-                "optional": False,
-            },
-            {
-                "field": "order",
-                "type": "int32",
-                "optional": False,
+# Since we can't send arbitrary structures to PostgreSQL via JSON and JDBC,
+# let's "flatten" each part of the order into a string
+JSON_SCHEMA = {
+    "type": "struct",
+    "fields": [
+        {
+            "field": "order_time",
+            "type": "int64",
+            "optional": False,
+        },
+        {
+            "field": "count",
+            "type": "int32",
+            "optional": False,
+        },
+        {
+            "field": "order",
+            "type": "array",
+            "optional": False,
+            "items": {
+                "type": "string",
+                "minItems": 1,
             }
-        ]
-    }
+        }
+    ]
+}
 
-    def pretty_order(order):
-        logging.error(f'Pretty {order=}')
-        return str(order)
-else:
-    JSON_SCHEMA = {
-        "type": "struct",
-        "fields": [
-            {
-                "field": "count",
-                "type": "int32",
-                "optional": False,
-            },
-            {
-                "field": "order",
-                "type": "array",
-                "optional": False,
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                        "minItems": 1,
-                        "uniqueItems": False,
-                    },
-                    "minItems": 1,
-                }
-            }
-        ]
-    }
+
+def pretty_order(order):
+    """Redefine this to cope with the "flattened" order parts"""
+    parts = []
+    if 'count' in order:
+        parts.append(f'{order["count"]}:')
+    if 'ready' in order and order['ready']:
+        parts.append('✓')
+    food = []
+    for item in order['order']:
+        if item == 'chips & chips':
+            food.append(f'large chips')
+        else:
+            food.append(item)
+    parts.append(', '.join(food))
+    return ' '.join(parts)
+
+
+def timestamp():
+    """Unix timestamp in milliseconds"""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    return int(now.timestamp() * 1000)
 
 
 class TillWidget(DemoWidget):
@@ -129,12 +132,14 @@ class TillWidget(DemoWidget):
             logging.info(f'Producer {self} stopped')
 
     async def make_order(self, producer):
-        if DEBUGGING:
-            count = await OrderNumber.get_next_order_number()
-            order = {'count': count, 'order': count}
-        else:
-            order = await new_order()
-            order['count'] = await OrderNumber.get_next_order_number()
+        order = await new_order()
+        order['count'] = await OrderNumber.get_next_order_number()
+        # Flatten the individual parts of the order
+        order['order'] = [' & '.join(x) for x in order['order']]
+        # Add a timestamp
+        order['order_time'] = timestamp()
+
+        logging.error(f'{order=}')
         self.add_line(f'Order {pretty_order(order)}')
         data = {
             "schema": JSON_SCHEMA,

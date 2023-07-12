@@ -496,6 +496,151 @@ inspection).
 
 So restart Kafka again - maybe I need to do that anyway to "clear" stuff.
 
+Finding 1: It definitely doesn't support my "array of arrays":
+```
+Unsupported schema type ARRAY for ARRAY values
+```
+
+So let's see what happens if I flatten that into an array of strings (so each
+part of an order is a single string - for instance, `"cod & chips"` - that's
+prettier than just `"cod, chips"`).
+
+(Whether that works or not, the other thing I'm interested in is whether we
+can put a (JSON as a) string into a JSON[B] field.)
+
+**And that works** - here's the result as a column of "array of strings"
+
+```sql
+defaultdb=> select * from demo5_cod_and_chips ;
+ count |              order
+-------+---------------------------------
+     1 | {chips}
+     2 | {"cod & chips","chips & chips"}
+     3 | {"cod & chips"}
+     4 | {"cod & chips"}
+     5 | {"cod & chips"}
+     6 | {"cod & chips"}
+     7 | {"cod & chips"}
+     8 | {"cod & chips"}
+(8 rows)
+```
+
+That table was created for me as:
+```
+defaultdb=> \d demo5_cod_and_chips
+        Table "public.demo5_cod_and_chips"
+ Column |  Type   | Collation | Nullable | Default
+--------+---------+-----------+----------+---------
+ count  | integer |           | not null |
+ order  | text[]  |           | not null |
+Indexes:
+    "demo5_cod_and_chips_pkey" PRIMARY KEY, btree (count)
+```
+
+And, entirely as expected, if I re-run the demo, I get errors because the
+`count` values are duplicated:
+```
+Batch entry 0 INSERT INTO "demo5_cod_and_chips"("count","order") VALUES(1,?) was aborted: ERROR: duplicate key value violates unique constraint "demo5_cod_and_chips_pkey"
+```
+So for this demo we probably want to add a *timestamp* as a key field.
+
+...let's do that...
+
+1. Add an `order_time` field (following the example at
+   https://github.com/aiven/jdbc-connector-for-apache-kafka/blob/master/docs/sink-connector.md#example) -
+   we type it as `int64` for simplicity.
+2. Change `pg_sink.json` to use the `order_time` filed as our key:
+   ```
+   "pk.fields": "order_time",
+   ```
+3. Delete and re-create the connector:
+   ```
+   avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
+   avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
+   ```
+
+And now I get the following table produced:
+```sql
+defaultdb=> select * from demo5_cod_and_chips ;
+  order_time   | count |              order
+---------------+-------+---------------------------------
+ 1689159326316 |     1 | {"cod & chips"}
+ 1689159327797 |     2 | {"cod & chips","chips & chips"}
+ 1689159329195 |     3 | {"cod & chips","chips & chips"}
+ 1689159330643 |     4 | {"cod & chips"}
+ 1689159332059 |     5 | {"cod & chips","chips & chips"}
+ 1689159333343 |     6 | {"cod & chips"}
+(6 rows)
+
+defaultdb=> \d demo5_cod_and_chips
+          Table "public.demo5_cod_and_chips"
+   Column   |  Type   | Collation | Nullable | Default
+------------+---------+-----------+----------+---------
+ order_time | bigint  |           | not null |
+ count      | integer |           | not null |
+ order      | text[]  |           | not null |
+Indexes:
+    "demo5_cod_and_chips_pkey" PRIMARY KEY, btree (order_time)
+```
+
+so that counts as success.
+
+Discussion: is the array of strings actually a better representation of an
+order than an array of arrays of strings? In a real situation, we'd have
+"names" for menu items - hence `"chips & chips"` would *actually* be `"large
+chips"`, and the price for `"cod & chips"` might be different than the sum of
+the prices for `"cod"` and `"chips"`.
+
+In terms of "is there plaice in this order" it doesn't make a lot of
+difference - in our naive system, we're either looking for "plaice" in a list
+of strings, or we're looking for "plaice" in a strings in a list. (and of
+course, we're not doing it in demo5 anyway). And again, in "real life", we
+might have a lookup table from "menu item" to "necessary ingredients" -
+consider the traditional menu item "fish supper", which we'd probably
+interpret as meaning "cod and chips".
+
+One final thing to try: Let's delete that table, re-create it by hand, change
+`pg_sink.json` to have `"auto.create": "false",` again, and then re-run
+
+1. Edit `pg_sink.json`
+
+2. ```sql
+   drop table demo5_cod_and_chips ;
+   create table demo5_cod_and_chips (
+       "order_time" bigint primary key,
+       "count" integer not null,
+       "order" text[] not null);
+   ```
+
+3. ```shell
+   avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
+   avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
+   ```
+
+And yes, that works as I'd hope.
+
+To summarise:
+```json
+{
+    "name":"sink_fish_chips_json_schema",
+    "connector.class": "io.aiven.connect.jdbc.JdbcSinkConnector",
+    "topics": "demo5-cod-and-chips",
+    "table.name.normalize": "true",
+    "connection.url": "jdbc:postgresql://DB_HOST:DB_PORT/DB_NAME?sslmode=DB_SSL_MODE",
+    "connection.user": "DB_USERNAME",
+    "connection.password": "DB_PASSWORD",
+    "tasks.max":"1",
+    "auto.create": "false",
+    "auto.evolve": "false",
+    "insert.mode": "insert",
+    "delete.enabled": "false",
+    "pk.mode": "record_value",
+    "pk.fields": "order_time",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter"
+}
+```
+
+
 -----------
 
 

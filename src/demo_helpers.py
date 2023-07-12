@@ -148,7 +148,7 @@ def pretty_order(order):
         if len(item) == 2 and item[0] == item[1] == 'chips':
             food.append(f'large chips')
         else:
-            food.append(' and '.join(item))
+            food.append(' & '.join(item))
     parts.append(', '.join(food))
 
     return ' '.join(parts)
