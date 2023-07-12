@@ -574,11 +574,123 @@ pip install httpx
 [`demo5_output_to_pg.py`](demo5_output_to_pg.py) that uses Avro instead of
 JSON.
 
-1. It registers its Avro schema with Karapace
-2. It encodes messages (before sending) using its own copy of that schema.
-3. It decodes messages (after receiving) using its own copy of that schema.
+1. It gains a command line option for the Karapace URI (and an equivalent
+   default to the environment variable we've set)
+2. It registers its Avro schema with Karapace
+3. It encodes messages (before sending) using its own copy of that schema.
+4. It decodes messages (after receiving) using its own copy of that schema.
 
 Still to do: Set up the connector to write to PostgreSQL.
+
+This time we're following the instructions at [Define a Kafka Connect
+configuration
+file](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink#define-a-kafka-connect-configuration-file)
+which assumes Avro and Karapace.
+
+File `avro_sink.json` starts out as:
+``` json
+{
+    "name":"sink_fish_chips_avro_karapace",
+    "connector.class": "io.aiven.connect.jdbc.JdbcSinkConnector",
+    "topics": "demo6-cod-and-chips",
+    "table.name.normalize": "true",
+    "connection.url": "DB_CONNECTION_URL",
+    "connection.user": "DB_USERNAME",
+    "connection.password": "DB_PASSWORD",
+    "tasks.max":"1",
+    "auto.create": "true",
+    "auto.evolve": "false",
+    "insert.mode": "insert",
+    "delete.enabled": "true",
+    "pk.mode": "record_key",
+    "pk.fields": "order_time",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "key.converter.schema.registry.url": "https://APACHE_KAFKA_HOST:SCHEMA_REGISTRY_PORT",
+    "key.converter.basic.auth.credentials.source": "USER_INFO",
+    "key.converter.schema.registry.basic.auth.user.info": "SCHEMA_REGISTRY_USER:SCHEMA_REGISTRY_PASSWORD",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "https://APACHE_KAFKA_HOST:SCHEMA_REGISTRY_PORT",
+    "value.converter.basic.auth.credentials.source": "USER_INFO",
+    "value.converter.schema.registry.basic.auth.user.info": "SCHEMA_REGISTRY_USER:SCHEMA_REGISTRY_PASSWORD"
+}
+```
+
+* We've set the `name` of the connector to indicate we're using Avro and
+  Karapace
+* The `topics` value names the topic for this demo, which is `demo6-cod-and-chips`
+* As before, we want `table.name.normalize` to be `true`, so that the topic
+  name will be converted to a legal PostgreSQL table name, `demo6_cod_and_chips`
+* The database connection information ...is as before - explain it again...
+* For the moment, we're leaving `auto.create` as `true`, so I don't have to
+  create the PG table - I may change that later
+* But there's no need for `auto.evolve` to be true, and again `insert` is all
+  we need for our `insert.mode` **EDIT EDIT EDIT maybe don't assume the reader
+  read the other place we said all this earlier on**
+* Our key is again `order_time`
+
+
+And all the upper case values come from appropriate places in the Aiven
+Console, or can doubtless be found using `avn service` commands, *with the
+exception of `USER_INFO`, which is meant to be left as it is*.
+
+> **EDIT EDIT EDIT** It seems to be worth powering off my Kafka service at
+> this point, and then powering it back on again, to clear any *old* (JSON)
+> messages, which won't make sense to the connector. Perhaps I should instead
+> find out how to tell it to "start with the latest message", rather than (as
+> I assume it is doing) the earliest.
+
+So let's create our connector:
+```shell
+avn service connector create $KAFKA_SERVICE_NAME @avro_sink.json
+```
+
+and run our demo program:
+```shell
+./demo6_output_to_pg_avro.py
+```
+
+Unfortunately the connector fails with
+```
+Failed to deserialize data for topic demo6-cod-and-chips to Avro
+...
+Caused by: org.apache.kafka.common.errors.SerializationException: Unknown magic byte!
+```
+
+so I've done something wrong.
+
+```shell
+curl -X GET $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest
+```
+returns the latest version of my schema, which *looks* OK
+```
+{"id":4,"schema":"{\"doc\":\"A fish and chip shop order\",\"fields\":[{\"name\":\"order_time\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"order\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"Order\",\"type\":\"record\"}","subject":"demo6","version":5}⏎```
+
+Here the response is as JSON:
+```json
+{
+  "id": 4,
+  "schema": "{\"doc\":\"A fish and chip shop order\",\"fields\":[{\"name\":\"order_time\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"order\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"Order\",\"type\":\"record\"}",
+  "subject": "demo6",
+  "version": 5
+}
+```
+
+Yes it has the schema defined as a string, but that seemed to be what I had to
+do (and my Python code using `avro` seems to want it as a string, as well).
+
+But hmm - I can't see anything in the `avro_sink.json` file indicating what
+schema to use, so how is it meant to know? Is this another case where I'm
+meant to name it after the topic?
+
+Aha - it *is* encoded in the message. The documentation on
+[Wire
+format](https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format)
+is presumably what I want, as I believe we're maintaining compatibility with
+other libraries...
+
+
+
+
 
 > **Note** If you want to explore using Avro for the messages, allowing the
 > schema to be specified in Karapace, rather than in each messages, see the

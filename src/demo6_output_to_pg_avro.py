@@ -18,6 +18,7 @@ import logging
 import os
 import pathlib
 import random
+import struct
 
 import aiokafka
 import aiokafka.helpers
@@ -88,7 +89,9 @@ def register_schema(schema_uri):
         f'{schema_uri}/subjects/demo6/versions',
         json={"schema": AVRO_SCHEMA_AS_STR}
     )
-    logging.info(f'Registered schema {r} {r.text}')
+    logging.info(f'Registered schema {r} {r.text=} {r.json()=}')
+    response_json = r.json()
+    return response_json['id']
 
 
 def pretty_order(order):
@@ -122,10 +125,12 @@ class TillWidget(DemoWidget):
             kafka_uri: str,
             ssl_context: SSLContext,
             topic_name: str,
+            schema_id: int,
     ) -> None:
         self.kafka_uri = kafka_uri
         self.ssl_context = ssl_context
         self.topic_name = topic_name
+        self.schema_id = schema_id
         super().__init__(name)
 
     async def background_task(self):
@@ -155,6 +160,18 @@ class TillWidget(DemoWidget):
 
         writer = avro.io.DatumWriter(PARSED_SCHEMA)
         byte_data = io.BytesIO()
+
+        # According to
+        # https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format
+        # (Confluent Developer > Platform > Schema Management > Fundamentals > Schema Formats > WIre format)
+        # the Avro messages use the first few bytes to specify which schema they are following,
+        # which allows the sink connector to know how to read the message,
+        # We'll just prepend the bytes by hand - it's a 0 byte followed by four bytes
+        # for the schema id
+        header = struct.pack('>bI', 0, self.schema_id)
+        byte_data.write(header)
+
+        # And then we write the actual data
         encoder = avro.io.BinaryEncoder(byte_data)
         writer.write(order, encoder)
         raw_bytes = byte_data.getvalue()
@@ -205,7 +222,10 @@ class FoodPreparerWidget(DemoWidget):
 
     async def prepare_order(self, raw_bytes):
         """Prepare an order"""
-        byte_data = io.BytesIO(raw_bytes)
+        # We need to ignore the first 5 bytes, as they're the 0 byte
+        # plus schema id
+        byte_data = io.BytesIO(raw_bytes[5:])
+
         decoder = avro.io.BinaryDecoder(byte_data)
         reader = avro.io.DatumReader(PARSED_SCHEMA)
         order = reader.read(decoder)
@@ -225,15 +245,20 @@ class MyGridApp(App):
         ("q", "quit()", "Quit"),
     ]
 
-    def __init__(self, kafka_uri: str, ssl_context: str, topic_name: str):
+    def __init__(self, kafka_uri: str, ssl_context: str, topic_name: str, schema_id: int):
         self.kafka_uri = kafka_uri
         self.ssl_context = ssl_context
         self.topic_name = topic_name
+        self.schema_id = schema_id
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        consumer = FoodPreparerWidget('Food Preparer', self.kafka_uri, self.ssl_context, self.topic_name)
-        producer = TillWidget('Till', self.kafka_uri, self.ssl_context, self.topic_name)
+        consumer = FoodPreparerWidget(
+            'Food Preparer', self.kafka_uri, self.ssl_context, self.topic_name,
+        )
+        producer = TillWidget(
+            'Till', self.kafka_uri, self.ssl_context, self.topic_name, self.schema_id,
+        )
 
         with Horizontal():
             with Vertical():
@@ -282,11 +307,11 @@ def main(kafka_uri, certs_dir, schema_uri):
         print(f'{e.__class__.__name__} {e}')
         return -1
 
-    register_schema(schema_uri)
+    schema_id = register_schema(schema_uri)
 
     setup_topics(kafka_uri, ssl_context, {TOPIC_NAME: 1})
 
-    app = MyGridApp(kafka_uri, ssl_context, TOPIC_NAME)
+    app = MyGridApp(kafka_uri, ssl_context, TOPIC_NAME, schema_id)
     app.run()
 
     logging.info('ALL DONE')
