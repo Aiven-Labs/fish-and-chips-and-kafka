@@ -3,6 +3,7 @@ src/__pycache__
 src/.python-version
 src/certs
 src/*.log
+src/*.json
 
 slides/venv
 slides/.rst.build_temp
