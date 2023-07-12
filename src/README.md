@@ -688,9 +688,38 @@ format](https://docs.confluent.io/platform/current/schema-registry/fundamentals/
 is presumably what I want, as I believe we're maintaining compatibility with
 other libraries...
 
+So let's try implementing that...
 
+**Progress!** (not working, but progress)
 
+It's now complaining that:
+```
+Error retrieving Avro value schema version for id 4
+```
+which means that it recognises that it wants the schema with id 4 - which
+actually matches what I was telling it to look for.
 
+```shell
+curl -X GET $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest | jq
+```
+gives me back
+```json
+{
+  "id": 4,
+  "schema": "{\"doc\":\"A fish and chip shop order\",\"fields\":[{\"name\":\"order_time\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"order\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"Order\",\"type\":\"record\"}",
+  "subject": "demo6",
+  "version": 5
+}
+```
+so that *sounds* like the right version - so maybe I've got the connection
+information in the `avro_sink.json` file wrong. Although it does *look* right.
+
+Hmm. Further down it says:
+```
+Caused by: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject 'demo6-cod-and-chips-value' not found.; error code: 40401
+```
+
+Oh - this is a known thing (it googles quite well). I'll look at it tomorrow.
 
 > **Note** If you want to explore using Avro for the messages, allowing the
 > schema to be specified in Karapace, rather than in each messages, see the
