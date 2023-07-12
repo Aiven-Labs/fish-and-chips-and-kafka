@@ -291,7 +291,7 @@ avn service terminate KAFKA_FISH_DEMO
 
 --------
 
-## Future things to do
+## Other things to do
 
 Homework projects suggested in the talk:
 
@@ -308,12 +308,12 @@ Homework projects suggested in the talk:
 
 Let me know if you play with these ideas!
 
-# Use a JDBC Kafka Connector
+# Use a JDBC Kafka Connector and JSON
 
 [`demo5_output_to_pg.py`](demo5_output_to_pg.py)
 
 This is based on
-[`demo1_cod_and_chips.py`](demo1_cod_and_chips.py)).
+[`demo1_cod_and_chips.py`](demo1_cod_and_chips.py).
 
 We need to make the following changes to the code:
 
@@ -505,6 +505,11 @@ might give something like:
 (6 rows)
 ```
 
+Note: if you want to delete the connector, then use:
+```shell
+avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
+```
+
 -----------
 
 Discussion: is the array of strings actually a better representation of an
@@ -520,6 +525,71 @@ course, we're not doing it in demo5 anyway). And again, in "real life", we
 might have a lookup table from "menu item" to "necessary ingredients" -
 consider the traditional menu item "fish supper", which we'd probably
 interpret as meaning "cod and chips".
+
+---------
+
+# Use a JDBC Kafka Connector, Avro and Karapace
+
+If we don't want to pass the schema information with every message, then we
+need to use a schema repository, that both sender and receiver can use to
+interpret the messages (in the exact same way).
+
+We're going to use [`karapace`](https://www.karapace.io/) which is an open
+source schema repository for Apache Kafka, and [Apache
+Avro™](https://avro.apache.org/) which is a serialization format for messages.
+The JDBC connector knows how to query Karapace for the schema of Avro
+messages, and can thus tell how to write their data to PostgreSQL.
+
+Aiven for Apache Kafka services have in-built support for Karapace
+(you may have noticed us specifying the `schema_registry=true` option when we
+created our Kafka service).
+
+
+Set an environment variable to the schema registry URI:
+Using bash:
+```shell
+export SCHEMA_REGISTRY_URI=$(avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
+```
+
+Using the Fish shell:
+```shell
+set -x SCHEMA_REGISTRY_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
+```
+
+
+In order to use Avro for our messages, we need to install a Python package that
+understands the format. We shall use the Apache
+[`avro`](https://pypi.org/project/avro/) package:
+
+```shell
+pip install avro
+```
+
+We're also going to need `httpx` (a more modern alternative to `requests`):
+```shell
+pip install httpx
+```
+
+[`demo6_output_to_pg_avro.py`](demo6_output_to_pg_avro.py) is a version of
+[`demo5_output_to_pg.py`](demo5_output_to_pg.py) that uses Avro instead of
+JSON.
+
+1. It registers its Avro schema with Karapace
+2. It encodes messages (before sending) using its own copy of that schema.
+3. It decodes messages (after receiving) using its own copy of that schema.
+
+Still to do: Set up the connector to write to PostgreSQL.
+
+> **Note** If you want to explore using Avro for the messages, allowing the
+> schema to be specified in Karapace, rather than in each messages, see the
+> [How to send and receive application data from Apache
+> Kafka®](https://aiven.io/developer/how-to-send-and-receive-application-data-from-apache-kafka)
+> tutorial. The
+> [Prerequisites](https://aiven.io/developer/how-to-send-and-receive-application-data-from-apache-kafka#prerequisites)mention
+> `kafka-python` and `confluent-kafka` instead of `aiokafka`, but their usage is similar enough that
+> the examples should still be clear. For our purposes, then start from [Add
+> schemas to messages with Apache
+> Avro™](https://aiven.io/developer/how-to-send-and-receive-application-data-from-apache-kafka#add-schemas-to-messages-with-apache-avro-)
 
 -----------
 

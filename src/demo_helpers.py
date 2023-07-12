@@ -230,19 +230,25 @@ class DemoWidget(Static):
 
 
 async def create_producer(
-        kafka_uri:str,
+        kafka_uri: str,
         ssl_context: SSLContext,
         name: str,
+        as_json: bool = True,
 ) -> aiokafka.AIOKafkaProducer:
     """Create a new Producer, and wait for it to start.
     """
     logging.info(f'Creating producer {name} for {kafka_uri}')
+    if as_json:
+        value_serializer = lambda v: json.dumps(v).encode('ascii')
+    else:
+        value_serializer = None
+
     try:
         producer = aiokafka.AIOKafkaProducer(
             bootstrap_servers=kafka_uri,
             security_protocol="SSL",
             ssl_context=ssl_context,
-            value_serializer=lambda v: json.dumps(v).encode('ascii'),
+            value_serializer=value_serializer,
         )
     except Exception as e:
         logging.error(f'Error creating producer {name}: {e.__class__.__name__} {e}')
@@ -259,21 +265,27 @@ async def create_producer(
 
 
 async def create_consumer(
-        kafka_uri:str,
+        kafka_uri: str,
         ssl_context: SSLContext,
         name: str,
         topic_name: str,
+        as_json: bool = True,
 ) -> aiokafka.AIOKafkaConsumer:
     """Create a new Consumer, and wait for it to start.
     """
     logging.info(f'Creating consumer {name} for {kafka_uri}')
+    if as_json:
+        value_deserializer=lambda v: json.loads(v.decode('ascii'))
+    else:
+        value_deserializer = None
+
     try:
         consumer = aiokafka.AIOKafkaConsumer(
             topic_name,
             bootstrap_servers=kafka_uri,
             security_protocol="SSL",
             ssl_context=ssl_context,
-            value_deserializer=lambda v: json.loads(v.decode('ascii')),
+            value_deserializer=value_deserializer,
         )
     except Exception as e:
         logging.error(f'Error creating consumer {name}: {e.__class__.__name__} {e}')
