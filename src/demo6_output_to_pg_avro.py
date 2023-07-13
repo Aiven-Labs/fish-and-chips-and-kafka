@@ -42,7 +42,9 @@ from demo_helpers import PREP_FREQ_MIN, PREP_FREQ_MAX
 
 DEMO_ID = 6
 LOG_FILE = f'demo{DEMO_ID}.log'
-TOPIC_NAME = f'demo{DEMO_ID}-cod-and-chips'
+
+# Use underlines so that the topic name will also work as an Avro schema name
+TOPIC_NAME = f'demo{DEMO_ID}_cod_and_chips'
 
 
 logging.basicConfig(
@@ -62,7 +64,7 @@ SCHEMA_REGISTRY_URI = os.environ.get('SCHEMA_REGISTRY_URI')
 # equivalent tables in PostgreSQL
 AVRO_SCHEMA = {
     'doc': 'A fish and chip shop order',
-    'name': 'Order',
+    'name': TOPIC_NAME,
     'type': 'record',
     'fields': [
         {'name': 'order_time', 'type': 'long'},
@@ -86,7 +88,7 @@ PARSED_SCHEMA = avro.schema.parse(AVRO_SCHEMA_AS_STR)
 def register_schema(schema_uri):
     """Register our schema with Karapace"""
     r = httpx.post(
-        f'{schema_uri}/subjects/demo6/versions',
+        f'{schema_uri}/subjects/{TOPIC_NAME}-value/versions',
         json={"schema": AVRO_SCHEMA_AS_STR}
     )
     logging.info(f'Registered schema {r} {r.text=} {r.json()=}')

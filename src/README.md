@@ -721,6 +721,10 @@ Caused by: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientEx
 
 Oh - this is a known thing (it googles quite well). I'll look at it tomorrow.
 
+https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#sr-schemas-subject-name-strategy
+
+> The default naming strategy (`TopicNameStrategy``) names the schema based on the topic name 
+
 > **Note** If you want to explore using Avro for the messages, allowing the
 > schema to be specified in Karapace, rather than in each messages, see the
 > [How to send and receive application data from Apache
@@ -731,6 +735,126 @@ Oh - this is a known thing (it googles quite well). I'll look at it tomorrow.
 > the examples should still be clear. For our purposes, then start from [Add
 > schemas to messages with Apache
 > Avro™](https://aiven.io/developer/how-to-send-and-receive-application-data-from-apache-kafka#add-schemas-to-messages-with-apache-avro-)
+
+Next day:
+
+Restarted Kafka.
+
+Running demo6 doesn't seem to crash the connector, but also doesn't seem to be
+creating a new database for me.
+
+Create the table explicitly:
+```sql
+CREATE TABLE demo6_cod_and_chips (
+   "order_time" bigint primary key,
+   "count" integer not null,
+   "order" text[] not null);
+```
+and run the demo again.
+
+and no, still no *errors* from the connector, but also no data in the table
+
+Oh - I changed the topic name in the program, but not in the configuration
+file `avro_sink.json`. That means the connector was sitting waiting for data
+in a topic that doesn't exist.
+
+Edit the file to have:
+```
+"topics": "demo6_cod_and_chips",
+```
+
+and stop/restart the connector:
+```shell
+avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_avro_karapace
+avn service connector create $KAFKA_SERVICE_NAME @avro_sink.json
+```
+
+And now it's failing with:
+```
+io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject 'demo6_cod_and_chips-value' not found.; error code: 40401
+```
+
+I can't just change the schema `name` field to `demo6_cod_and_chips-value`,
+because the Python code then complains:
+```
+avro.errors.InvalidName: demo6_cod_and_chips-value is not a valid Avro name because it does not match the pattern (?:^|\.)[A-Za-z_][A-Za-z0-9_]*$
+```
+That is, as I found before, hyphens are not allowed.
+
+Ah - re-reading https://www.karapace.io/quickstart, I think I need to change
+the name used in the Karapace URI when registering the schema. So instead of
+doing a POST to
+```
+        f'{schema_uri}/subjects/demo6/versions',
+```
+I maybe want to use
+```
+        f'{schema_uri}/subjects/demo6_cod_and_chips-value/versions',
+```
+
+And now I'm getting
+```
+PK mode for table 'demo6_cod_and_chips' is RECORD_KEY, but record key schema is missing
+```
+which I suppose makes sense - but is the schema for the key *just* the schema
+for the key, or can I re-use the existing schema? And surely if it's a
+different schema it will have a different id???
+
+...**oh** - my `avro_sink.json` has `"pk.mode": "record_key"` instead of
+`"pk.mode": "record_value"` - I'm telling it the wrong thing! Let's fix the
+configuration and restart the connector...
+
+and success!
+```sql
+defaultdb=> select * from demo6_cod_and_chips ;
+  order_time   | count |              order
+---------------+-------+---------------------------------
+ 1689238490892 |     1 | {"cod & chips"}
+ 1689238492138 |     2 | {"cod & chips"}
+ 1689238493296 |     3 | {chips}
+ 1689238494749 |     4 | {"cod & chips"}
+ 1689238495998 |     5 | {"cod & chips","chips & chips"}
+ 1689238497410 |     6 | {"cod & chips","chips & chips"}
+ 1689238498697 |     7 | {"cod & chips"}
+ 1689238499737 |     8 | {chips}
+```
+
+-----------
+
+Check which of these I have discussed / should have diccussed:
+``` shell
+curl "$KARAPACE_REST_URI/topics"
+curl $KARAPACE_REGISTRY_URI/schemas/ids/5
+curl $KARAPACE_REGISTRY_URI/subjects
+curl $KARAPACE_REGISTRY_URI/subjects/demo6
+curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions
+curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions/5
+curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest
+curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest | jq
+curl $KARAPACE_REGISTRY_URI/subjects/schemas/ids/5
+curl -X DELETE $KARAPACE_REGISTRY_URI/subjects/demo6
+
+
+
+avn service cli $PG_SERVICE_NAME
+avn service connector create $KAFKA_SERVICE_NAME @avro_sink.json
+avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
+avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
+avn service connector delete $KAFKA_SERVICE_NAME sink_iot_json_schema
+avn service connector list $KAFKA_SERVICE_NAME
+avn service connector restart $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
+avn service connector schema $KAFKA_SERVICE_NAME io.debezium.connector.sqlserver.SqlServerConnector
+avn service connector status $KAFKA_SERVICE_NAME
+avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
+avn service connector status $KAFKA_SERVICE_NAME sink_io_json_schema
+avn service get tibs-kafka-fish --json | jq
+avn service help
+avn service wait $KAFKA_SERVICE_NAME
+avn user login tony.ibbs@aiven.io --token
+set -x KAFKA_REST_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.kafka_rest_uri')
+set -x KAFKA_REST_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
+set -x SCHEMA_REGISTRY_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
+```
 
 -----------
 
