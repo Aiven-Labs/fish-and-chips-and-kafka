@@ -300,15 +300,24 @@ Homework projects suggested in the talk:
     also have the cook "wake up" periodically to check if they need to
     cook more cod or chips to keep the amount in the hot cabinet at the
     right level.
+
 2.  Use a JDBC Kafka Connector to send orders from the main topic to a
     PostgreSQL® database, and then add a widget to the demo that queries
     that database periodically and updates a panel with some summary
     information (perhaps as simple as the total count of cod, chip and
     plaice orders).
 
+    There are two more demos below (demo5 and demo6) that show how to use a
+    JDBC Kafka Connector in the context of this code - although they don't add
+    in the extra widget to show summary information.
+
 Let me know if you play with these ideas!
 
-# Use a JDBC Kafka Connector and JSON
+--------
+
+# Write to PostgreSQL with a JDBC Kafka Connector and JSON
+
+## Our demo code
 
 [`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py)
 
@@ -331,9 +340,8 @@ We need to make the following changes to the code:
 > the JSON mechanism doesn't currently support that, so we need to have an
 > explicit schema in each message.
 
-* Aiven documentation: [Create a JDBC sink connector from Apache Kafka® to
-  another database](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink)
-  
+## Create a PostgreSQL database
+
 First create the PostgreSQL database (note: a free tier database will do, or a
 hobbyist plan should be plenty).
 
@@ -362,9 +370,11 @@ and again wait for it to finish starting up:
 avn service wait $PG_SERVICE_NAME
 ```
 
-Next we need to connect to the PostgreSQL database and set up a schema. Here
-I'm using the `avn` command to connect to the database, but you could equally
-use `psql` or whatever other tool you prefer.
+## Create the target database table
+
+Next we need to connect to the PostgreSQL database and create a table to write
+to. Here I'm using the `avn` command to connect to the database, but you could
+equally use `psql` or whatever other tool you prefer.
 
 > **Note** If you go to the Connection Information page for the Aiven for
 > PostgreSQL service, the **Quick Connect** button can be used to show the
@@ -388,6 +398,8 @@ CREATE TABLE demo5_cod_and_chips (
 > `int64` in the JSON schema maps to `bigint` in PostgreSQL, and an array of
 > strings is `text[]`.
 
+## Upgrade the Aiven for Apache Kafka service to allow service integrations
+
 Since we're going to use a JDBC connector with our Kafka, that means using a
 service integration (between Kafka and our PostrgreSQL database), and so we
 need to upgrade our Kafka to a plan that will support service integrations,
@@ -403,6 +415,8 @@ and again wait for the service to finish updating itself:
 ```shell
 avn service wait $KAFKA_SERVICE_NAME
 ```
+
+## Set up the sink connector configuration
 
 We're now going to follow the instructions at
 [Create a JDBC sink connector to PostgreSQL® on a topic with a JSON schema](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink#example-create-a-jdbc-sink-connector-to-postgresql-on-a-topic-with-a-json-schema)
@@ -435,7 +449,7 @@ following as a template:
 2. The value for `topics` needs to match the topic name specified in
    [`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py) - that is,
    `demo5-cod-and-chips`.
-   
+
 3. By default, the table written to will have the same name as the topic.
    Since that includes `-` characters, we want to set `table.name.normalize`
    to `true`, which means the table name will be `demo5_cod_and_chips`
@@ -455,6 +469,12 @@ following as a template:
    be unique. In practice, for a demo, this might actually be a problem, as
    restarting the demo program will restart `count` from 0 again. We'll see
    what happens in practice.
+
+All the upper case values come from appropriate places in the Aiven
+Console, or can doubtless be found using `avn service` commands, *with the
+exception of `USER_INFO`, which is meant to be left as it is*.
+
+## Create the sink connector
 
 Now we should be able to create the connector:
 ``` shell
@@ -480,19 +500,23 @@ We can check the status of the connector as follows:
 avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
 ```
 
-If we now run the program:
+## Run the demo program
+
+We can now run the program:
 ```shell
 ./demo5_json_output_to_pg.py
 ```
-it will work as we expect. As normal, we can stop it by typing `q`.
+it should work as we expect, showing the Till and FoodPreparer like `demo1_cod_and_chips.py`. As
+normal, we can stop it by typing `q`.
 
-If we then go back to the database, we can check the content of the table.
+If we go back to the database, we can check the content of the table.
 For instance:
 ```sql
 select * from demo5_cod_and_chips ;
 ```
 
-might give something like:
+The results should be something like the following (depending on what the
+program did, and how long it ran):
 ```
   order_time   | count |              order
 ---------------+-------+---------------------------------
@@ -502,10 +526,11 @@ might give something like:
  1689159330643 |     4 | {"cod & chips"}
  1689159332059 |     5 | {"cod & chips","chips & chips"}
  1689159333343 |     6 | {"cod & chips"}
-(6 rows)
 ```
 
-Note: if you want to delete the connector, then use:
+## Deleting the sink connector
+
+If you want to delete the connector, then use:
 ```shell
 avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
 ```
@@ -528,7 +553,21 @@ interpret as meaning "cod and chips".
 
 ---------
 
-# Use a JDBC Kafka Connector, Avro and Karapace
+# Write to PostgreSQL with a JDBC Kafka Connector, Avro and Karapace
+
+## Our demo code
+
+[`demo6_avro_output_to_pg.py`](demo6_avro_output_to_pg.py) is a version of
+[`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py) that uses Avro instead of
+JSON.
+
+1. It gains a command line option for the Karapace URI (and an equivalent
+   default to the environment variable we've set).
+2. It registers its Avro schema with Karapace, and notes the schema id.
+3. It encodes messages (before sending) using its own copy of that schema.
+4. It decodes messages (after receiving) using its own copy of that schema.
+5. It adds the schema id to each message so that the JDBC connector can look
+   the schema up and know how to intrepret the Avro messages.
 
 If we don't want to pass the schema information with every message, then we
 need to use a schema repository, so that both sender and receiver can use to
@@ -544,6 +583,93 @@ Aiven for Apache Kafka services have in-built support for Karapace
 (you may have noticed us specifying the `schema_registry=true` option when we
 created our Kafka service).
 
+## Create a PostgreSQL database
+
+You can skip this section if you already created the database for demo5,
+above - but make sure that the environment variable `$PG_SERVICE_NAME` is
+still set correctly.
+
+Otherwise, let's create one now (note: a free tier database will do, or a
+hobbyist plan should be plenty).
+
+Lets set the database name as an environment variable - in Bash that's:
+```shell
+export PG_SERVICE_NAME tibs-pg-fish
+```
+and in the Fish shell:
+```shell
+set -x PG_SERVICE_NAME tibs-pg-fish
+```
+
+Then create the service. It's sensible to put it into the same cloud/region as
+the Kafka service - although if you're using a free PostgreSQL, that may not
+be possible - luckily it's not critical for a demo like this.
+
+```shell
+avn service create $PG_SERVICE_NAME \
+      --service-type pg \
+      --cloud google-europe-north1 \
+      --plan hobbyist
+```
+
+and again wait for it to finish starting up:
+```shell
+avn service wait $PG_SERVICE_NAME
+```
+
+## Create the target database table
+
+Next we need to connect to the PostgreSQL database and create a table to write
+to. Here I'm using the `avn` command to connect to the database, but you could
+equally use `psql` or whatever other tool you prefer.
+
+> **Note** If you go to the Connection Information page for the Aiven for
+> PostgreSQL service, the **Quick Connect** button can be used to show the
+> ways to connect with a variety of tools.
+
+```shell
+avn service cli $PG_SERVICE_NAME
+```
+
+```sql
+CREATE TABLE demo6_cod_and_chips (
+   "order_time" bigint primary key,
+   "count" integer not null,
+   "order" text[] not null);
+```
+
+(We're creating a new database for this new demo, but the schema for the
+database is the same.)
+
+> **Note** we [need to quote the column name `order` because it is also a
+> PostgreSQL keyword](https://stackoverflow.com/questions/7651417/escaping-keyword-like-column-names-in-postgres),
+> so we might as well quote all of the column names.
+>
+> `int64` in the JSON schema maps to `bigint` in PostgreSQL, and an array of
+> strings is `text[]`.
+
+## Upgrade the Aiven for Apache Kafka service to allow service integrations
+
+Again, if you already followed the instructions for demo5, you can skip this
+section. Otherwise, let's upgrade our service.
+
+Since we're going to use a JDBC connector with our Kafka, that means using a
+service integration (between Kafka and our PostrgreSQL database), and so we
+need to upgrade our Kafka to a plan that will support service integrations,
+like `business-4`, and then switch Kafka Connect on so we can use them.
+
+```shell
+avn service update $KAFKA_SERVICE_NAME \
+      --plan business-4 \
+      -c kafka_connect=true
+```
+
+and again wait for the service to finish updating itself:
+```shell
+avn service wait $KAFKA_SERVICE_NAME
+```
+
+## Remember the schema registry URI
 
 Set an environment variable to the schema registry URI:
 Using bash:
@@ -556,6 +682,7 @@ Using the Fish shell:
 set -x SCHEMA_REGISTRY_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
 ```
 
+## Install extra Python packages
 
 In order to use Avro for our messages, we need to install a Python package that
 understands the format. We shall use the Apache
@@ -570,35 +697,27 @@ We're also going to need `httpx` (a more modern alternative to `requests`):
 pip install httpx
 ```
 
-[`demo6_avro_output_to_pg.py`](demo6_avro_output_to_pg.py) is a version of
-[`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py) that uses Avro instead of
-JSON.
-
-1. It gains a command line option for the Karapace URI (and an equivalent
-   default to the environment variable we've set)
-2. It registers its Avro schema with Karapace
-3. It encodes messages (before sending) using its own copy of that schema.
-4. It decodes messages (after receiving) using its own copy of that schema.
-
-Still to do: Set up the connector to write to PostgreSQL.
+## Set up the sink connector configuration
 
 This time we're following the instructions at [Define a Kafka Connect
 configuration
 file](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink#define-a-kafka-connect-configuration-file)
 which assumes Avro and Karapace.
 
-File `pg_avro_sink.json` starts out as:
+We need the values for `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_SSL_MODE`,
+`DB_USERNAME` and `DB_PASSWORD` from the Overview part of the PostgreSQL
+service page, so we can create a file called `pg_avro_sink.json`, using the
+following as a template:
 ``` json
 {
     "name":"sink_fish_chips_avro_karapace",
     "connector.class": "io.aiven.connect.jdbc.JdbcSinkConnector",
-    "topics": "demo6-cod-and-chips",
-    "table.name.normalize": "true",
+    "topics": "demo6_cod_and_chips",
     "connection.url": "DB_CONNECTION_URL",
     "connection.user": "DB_USERNAME",
     "connection.password": "DB_PASSWORD",
     "tasks.max":"1",
-    "auto.create": "true",
+    "auto.create": "false",
     "auto.evolve": "false",
     "insert.mode": "insert",
     "delete.enabled": "true",
@@ -615,202 +734,85 @@ File `pg_avro_sink.json` starts out as:
 }
 ```
 
-* We've set the `name` of the connector to indicate we're using Avro and
-  Karapace
-* The `topics` value names the topic for this demo, which is `demo6-cod-and-chips`
-* As before, we want `table.name.normalize` to be `true`, so that the topic
-  name will be converted to a legal PostgreSQL table name, `demo6_cod_and_chips`
-* The database connection information ...is as before - explain it again...
-* For the moment, we're leaving `auto.create` as `true`, so I don't have to
-  create the PG table - I may change that later
-* But there's no need for `auto.evolve` to be true, and again `insert` is all
-  we need for our `insert.mode` **EDIT EDIT EDIT maybe don't assume the reader
-  read the other place we said all this earlier on**
-* Our key is again `order_time`
+1. We've set the `name` of the connector to indicate we're using Avro and
+   Karapace
 
+2. The value for `topics` needs to match the topic name specified in
+   [`demo6_avro_output_to_pg.py`](demo6_avro_output_to_pg.py) - that is,
+   `demo6_cod_and_chips`.
 
-And all the upper case values come from appropriate places in the Aiven
+   Unlike the other demo programs, this topic name contains underscores rather
+   than hyphens, because we want it to match the Avro schema name, and Avro
+   names don't allow hyphens.
+
+3. By default, the table written to will have the same name as the topic. The
+   topic name `demo6_cod_and_chips` is a legal PostgreSQL table name, so we
+   don't need to specify `"table.name.normalize": "true"`.
+
+4. The value for `pk.fields` is `"order_time"`, and that together with the value
+   for `pk.mode` says to use the `order_time` field from the message as its key.
+
+5. We set `auto.create` to `false` because we have already created our target
+   table, and don't need it creating for us. Similarly, we set `auto.evolve`
+   to `false` because we don't want its schema to be changed for us.
+
+6. We set `insert.mode` to `"insert"` because we should only be inserting new
+   records. For PostgreSQL,
+   [`upsert`](https://github.com/aiven/jdbc-connector-for-apache-kafka/blob/master/docs/sink-connector.md#upsert-mode)
+   would do `INSERT .. ON CONFLICT .. DO UPDATE SET ..`, which will update a
+   row if it already exists. In theory we don't want that, as each order shoud
+   be unique. In practice, for a demo, this might actually be a problem, as
+   restarting the demo program will restart `count` from 0 again. We'll see
+   what happens in practice.
+
+All the upper case values come from appropriate places in the Aiven
 Console, or can doubtless be found using `avn service` commands, *with the
 exception of `USER_INFO`, which is meant to be left as it is*.
 
-> **EDIT EDIT EDIT** It seems to be worth powering off my Kafka service at
-> this point, and then powering it back on again, to clear any *old* (JSON)
-> messages, which won't make sense to the connector. Perhaps I should instead
-> find out how to tell it to "start with the latest message", rather than (as
-> I assume it is doing) the earliest.
+## Create the sink connector
 
 So let's create our connector:
 ```shell
 avn service connector create $KAFKA_SERVICE_NAME @pg_avro_sink.json
 ```
 
-and run our demo program:
+> **Note** It's possible to specify the JSON at the command line, but
+> generally easier to set it up correctly in a file with a text editor, and
+> then use that.
+
+
+To get a list of the service connectors (as a JSON structure) attached to this Kafka, use:
+```shell
+avn service connector list $KAFKA_SERVICE_NAME
+```
+
+To find out more about the connector, go to the Aiven console and the service
+page for our Kafka, and look at the **Connectors** tab. If there are errors,
+then you'll see a warning triangle symbol next to the "Tasks" value for the
+connector, and clicking on that will give the Java stacktrace.
+
+We can check the status of the connector as follows:
+```shell
+avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_avro_karapace
+```
+
+## Run the demo program
+
+We can now run the program:
 ```shell
 ./demo6_avro_output_to_pg.py
 ```
+it should work as we expect, showing the Till and FoodPreparer like `demo1_cod_and_chips.py`. As
+normal, we can stop it by typing `q`.
 
-Unfortunately the connector fails with
-```
-Failed to deserialize data for topic demo6-cod-and-chips to Avro
-...
-Caused by: org.apache.kafka.common.errors.SerializationException: Unknown magic byte!
-```
-
-so I've done something wrong.
-
-```shell
-curl -X GET $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest
-```
-returns the latest version of my schema, which *looks* OK
-```
-{"id":4,"schema":"{\"doc\":\"A fish and chip shop order\",\"fields\":[{\"name\":\"order_time\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"order\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"Order\",\"type\":\"record\"}","subject":"demo6","version":5}⏎```
-
-Here the response is as JSON:
-```json
-{
-  "id": 4,
-  "schema": "{\"doc\":\"A fish and chip shop order\",\"fields\":[{\"name\":\"order_time\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"order\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"Order\",\"type\":\"record\"}",
-  "subject": "demo6",
-  "version": 5
-}
-```
-
-Yes it has the schema defined as a string, but that seemed to be what I had to
-do (and my Python code using `avro` seems to want it as a string, as well).
-
-But hmm - I can't see anything in the `pg_avro_sink.json` file indicating what
-schema to use, so how is it meant to know? Is this another case where I'm
-meant to name it after the topic?
-
-Aha - it *is* encoded in the message. The documentation on
-[Wire
-format](https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format)
-is presumably what I want, as I believe we're maintaining compatibility with
-other libraries...
-
-So let's try implementing that...
-
-**Progress!** (not working, but progress)
-
-It's now complaining that:
-```
-Error retrieving Avro value schema version for id 4
-```
-which means that it recognises that it wants the schema with id 4 - which
-actually matches what I was telling it to look for.
-
-```shell
-curl -X GET $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest | jq
-```
-gives me back
-```json
-{
-  "id": 4,
-  "schema": "{\"doc\":\"A fish and chip shop order\",\"fields\":[{\"name\":\"order_time\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"order\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"Order\",\"type\":\"record\"}",
-  "subject": "demo6",
-  "version": 5
-}
-```
-so that *sounds* like the right version - so maybe I've got the connection
-information in the `pg_avro_sink.json` file wrong. Although it does *look* right.
-
-Hmm. Further down it says:
-```
-Caused by: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject 'demo6-cod-and-chips-value' not found.; error code: 40401
-```
-
-Oh - this is a known thing (it googles quite well). I'll look at it tomorrow.
-
-https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#sr-schemas-subject-name-strategy
-
-> The default naming strategy (`TopicNameStrategy``) names the schema based on the topic name 
-
-> **Note** If you want to explore using Avro for the messages, allowing the
-> schema to be specified in Karapace, rather than in each messages, see the
-> [How to send and receive application data from Apache
-> Kafka®](https://aiven.io/developer/how-to-send-and-receive-application-data-from-apache-kafka)
-> tutorial. The
-> [Prerequisites](https://aiven.io/developer/how-to-send-and-receive-application-data-from-apache-kafka#prerequisites)mention
-> `kafka-python` and `confluent-kafka` instead of `aiokafka`, but their usage is similar enough that
-> the examples should still be clear. For our purposes, then start from [Add
-> schemas to messages with Apache
-> Avro™](https://aiven.io/developer/how-to-send-and-receive-application-data-from-apache-kafka#add-schemas-to-messages-with-apache-avro-)
-
-Next day:
-
-Restarted Kafka.
-
-Running demo6 doesn't seem to crash the connector, but also doesn't seem to be
-creating a new database for me.
-
-Create the table explicitly:
+If we go back to the database, we can check the content of the table.
+For instance:
 ```sql
-CREATE TABLE demo6_cod_and_chips (
-   "order_time" bigint primary key,
-   "count" integer not null,
-   "order" text[] not null);
-```
-and run the demo again.
-
-and no, still no *errors* from the connector, but also no data in the table
-
-Oh - I changed the topic name in the program, but not in the configuration
-file `pg_avro_sink.json`. That means the connector was sitting waiting for data
-in a topic that doesn't exist.
-
-Edit the file to have:
-```
-"topics": "demo6_cod_and_chips",
+select * from demo5_cod_and_chips ;
 ```
 
-and stop/restart the connector:
-```shell
-avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_avro_karapace
-avn service connector create $KAFKA_SERVICE_NAME @pg_avro_sink.json
-```
-
-And now it's failing with:
-```
-io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject 'demo6_cod_and_chips-value' not found.; error code: 40401
-```
-
-I can't just change the schema `name` field to `demo6_cod_and_chips-value`,
-because the Python code then complains:
-```
-avro.errors.InvalidName: demo6_cod_and_chips-value is not a valid Avro name because it does not match the pattern (?:^|\.)[A-Za-z_][A-Za-z0-9_]*$
-```
-That is, as I found before, hyphens are not allowed.
-
-Ah - re-reading https://www.karapace.io/quickstart, I think I need to change
-the name used in the Karapace URI when registering the schema. So instead of
-doing a POST to
-```
-        f'{schema_uri}/subjects/demo6/versions',
-```
-I maybe want to use
-```
-        f'{schema_uri}/subjects/demo6_cod_and_chips-value/versions',
-```
-
-And now I'm getting
-```
-PK mode for table 'demo6_cod_and_chips' is RECORD_KEY, but record key schema is missing
-```
-which I suppose makes sense - but is the schema for the key *just* the schema
-for the key, or can I re-use the existing schema? And surely if it's a
-different schema it will have a different id???
-
-The JDBC connector appears to follow Confluent's [Subject name
-strategy](https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#subject-name-strategy)
-for its schema usage, ...so thus `<topic-name>-value`. It may be possible to
-alter that with the configuration file, but it didn't seem worth trying for
-this demo.
-
-...**oh** - my `pg_avro_sink.json` has `"pk.mode": "record_key"` instead of
-`"pk.mode": "record_value"` - I'm telling it the wrong thing! Let's fix the
-configuration and restart the connector...
-
-and success!
+The results should be something like the following (depending on what the
+program did, and how long it ran):
 ```sql
 defaultdb=> select * from demo6_cod_and_chips ;
   order_time   | count |              order
@@ -825,7 +827,73 @@ defaultdb=> select * from demo6_cod_and_chips ;
  1689238499737 |     8 | {chips}
 ```
 
------------
+## Deleting the sink connector
+
+If you want to delete the connector, then use:
+```shell
+avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_avro_karapace
+```
+
+## More information on how the JDBC connector works with Avro messages
+
+We're using the
+[`io.aiven.connect.jdbc.JdbcSinkConnector`](https://github.com/aiven/jdbc-connector-for-apache-kafka/blob/master/docs/sink-connector.md),
+which is an Apache 2 licensed fork of the Confluent
+[kafka-connect-jdbc](https://github.com/confluentinc/kafka-connect-jdbc) sink
+connector, from before it changed license (the Confluent connector is no
+longer Open Source).
+
+Our `pg_avro_sink.json` configuration says:
+```json
+"value.converter": "io.confluent.connect.avro.AvroConverter"
+```
+which is telling the connector to use the Confluent
+`io.confluent.connect.avro.AvroConverter` to "pick apart" the message and work
+out what to insert into the PostgreSQL database.
+
+> **Note** The `io.confluent.connect.avro.AvroConverter`
+> [source code](https://github.com/confluentinc/schema-registry/blob/master/avro-converter/src/main/java/io/confluent/connect/avro/AvroConverter.java)
+> is licensed under the Apache License, Version 2.0.
+
+The schema registry *connection* information for the JDBC connector is
+specified in the JSON configuration file (`pg_avro_sink.json` in our case).
+However, the *schema* that the connector will use to decode the Avro messages
+(so it can write to the sink database) is not specified in the configuration
+file.
+
+Instead, the `AvroConverter` expects each Avro message to start with an extra 5
+bytes: a single byte containing 0, and four bytes containing the schema id.
+[`demo6_avro_output_to_pg.py`](demo6_avro_output_to_pg.py) includes code to add
+these bytes to each message.
+
+> **Note** It's perfectly possible and reasonable to send unaltered Avro
+> messages through Kafka - it works as you'd expect, since Kafka is just
+> dealing with bytes. However, the JDBC connector `AvroConverter` won't be
+> able to do its job with ordinary Avro messages.
+
+See the documentation at [Confluent Developer > Platform > Schema Management >
+Fundamentals > Schema Formats > WIre
+format](https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format)
+for details of the message header.
+
+The `AvroConverter` appears to follow Confluent's [Subject name
+strategy](https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#subject-name-strategy),
+which means that when it looks up the registry id, it expects to find a registry with the same
+base name as the topic. The actual schema name then needs to end with `-value`
+for a value registry, and `-key` for a key registry.
+
+Since we're not using a separate key for our messages (we're getting the key
+from the `order_time` value in the message itself), we only need one schema.
+We need a `-value` schema, and don't need a `-key` schema.
+
+> **Note** *It may be possible to alter this behaviour with the configuration
+> file, but it didn't seem worth trying for this demo.
+
+All of this means that the demo program makes sure to register the Avro schema at
+`$SCHEMA_REGISTRY_URI/subjects/demo6_cod_and_chips-value/versions`, using the
+topic name and `-value`.
+
+--------
 
 # Other resources
 

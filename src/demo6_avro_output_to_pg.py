@@ -176,7 +176,7 @@ class TillWidget(DemoWidget):
 
         # According to
         # https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format
-        # (Confluent Developer > Platform > Schema Management > Fundamentals > Schema Formats > WIre format)
+        # (Confluent Developer > Platform > Schema Management > Fundamentals > Schema Formats > Wire format)
         # the Confluent JDBC Connector needs us to put the schema id on the front of
         # each Avro message. We need to prepend a 0 byte and then the schema
         # id as a 4 byte value.
