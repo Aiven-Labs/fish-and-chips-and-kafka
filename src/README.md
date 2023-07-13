@@ -562,13 +562,16 @@ order than an array of arrays of strings? In a real situation, we'd have
 chips"`, and the price for `"cod & chips"` might be different than the sum of
 the prices for `"cod"` and `"chips"`.
 
-In terms of "is there plaice in this order" it doesn't make a lot of
-difference - in our naive system, we're either looking for "plaice" in a list
-of strings, or we're looking for "plaice" in a strings in a list. (and of
-course, we're not doing it in demo5 anyway). And again, in "real life", we
-might have a lookup table from "menu item" to "necessary ingredients" -
-consider the traditional menu item "fish supper", which we'd probably
-interpret as meaning "cod and chips".
+In terms of "is there `plaice` in this order" it doesn't make a lot of
+difference - in the original structure, we're looking for the string
+`"plaice"` in a list of lists, and in the later structure, we're looking for
+`plaice` to occur in the strings in a (flat) list.
+
+And, of course, we're not actually doing that search in demo5 anyway.
+
+Also, in "real life", we might have a lookup table from "menu item" to
+"necessary ingredients" - consider the traditional menu item `"fish supper"`,
+which we'd probably interpret as meaning `"cod & chips"`.
 
 ---------
 
