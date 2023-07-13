@@ -407,9 +407,10 @@ CREATE TABLE demo5_cod_and_chips (
    "order" text[] not null);
 ```
 
-> **Note** we need to [quote the column name
-> `order`](https://stackoverflow.com/questions/7651417/escaping-keyword-like-column-names-in-postgres)
-> because it is also a PostgreSQL keyword, so we might as well quote all of the column names.
+> **Note** we need to quote the column name `order` because it is also a
+> PostgreSQL keyword, so we might as well quote all of the column names
+> ([here's an
+> explanation](https://stackoverflow.com/questions/7651417/escaping-keyword-like-column-names-in-postgres)).
 >
 > `int64` in the JSON schema maps to `bigint` in PostgreSQL, and an array of
 > strings is `text[]`.
@@ -659,9 +660,10 @@ CREATE TABLE demo6_cod_and_chips (
 (We're creating a new database for this new demo, but the schema for the
 database is the same.)
 
-> **Note** we need to [quote the column name
-> `order`](https://stackoverflow.com/questions/7651417/escaping-keyword-like-column-names-in-postgres)
-> because it is also a PostgreSQL keyword, so we might as well quote all of the column names.
+> **Note** we need to quote the column name `order` because it is also a
+> PostgreSQL keyword, so we might as well quote all of the column names
+> ([here's an
+> explanation](https://stackoverflow.com/questions/7651417/escaping-keyword-like-column-names-in-postgres)).
 >
 > `int64` in the JSON schema maps to `bigint` in PostgreSQL, and an array of
 > strings is `text[]`.
