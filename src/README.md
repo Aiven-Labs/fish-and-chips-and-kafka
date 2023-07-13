@@ -409,7 +409,7 @@ We're now going to follow the instructions at
 
 We need the values for `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_SSL_MODE`,
 `DB_USERNAME` and `DB_PASSWORD` from the Overview part of the PostgreSQL
-service page, so we can create a file called `pg_sink.json`, using the
+service page, so we can create a file called `pg_json_sink.json`, using the
 following as a template:
 ```json
 {
@@ -458,7 +458,7 @@ following as a template:
 
 Now we should be able to create the connector:
 ``` shell
-avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
+avn service connector create $KAFKA_SERVICE_NAME @pg_json_sink.json
 ```
 
 > **Note** It's possible to specify the JSON at the command line, but
@@ -587,7 +587,7 @@ configuration
 file](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink#define-a-kafka-connect-configuration-file)
 which assumes Avro and Karapace.
 
-File `avro_sink.json` starts out as:
+File `pg_avro_sink.json` starts out as:
 ``` json
 {
     "name":"sink_fish_chips_avro_karapace",
@@ -641,7 +641,7 @@ exception of `USER_INFO`, which is meant to be left as it is*.
 
 So let's create our connector:
 ```shell
-avn service connector create $KAFKA_SERVICE_NAME @avro_sink.json
+avn service connector create $KAFKA_SERVICE_NAME @pg_avro_sink.json
 ```
 
 and run our demo program:
@@ -678,7 +678,7 @@ Here the response is as JSON:
 Yes it has the schema defined as a string, but that seemed to be what I had to
 do (and my Python code using `avro` seems to want it as a string, as well).
 
-But hmm - I can't see anything in the `avro_sink.json` file indicating what
+But hmm - I can't see anything in the `pg_avro_sink.json` file indicating what
 schema to use, so how is it meant to know? Is this another case where I'm
 meant to name it after the topic?
 
@@ -712,7 +712,7 @@ gives me back
 }
 ```
 so that *sounds* like the right version - so maybe I've got the connection
-information in the `avro_sink.json` file wrong. Although it does *look* right.
+information in the `pg_avro_sink.json` file wrong. Although it does *look* right.
 
 Hmm. Further down it says:
 ```
@@ -755,7 +755,7 @@ and run the demo again.
 and no, still no *errors* from the connector, but also no data in the table
 
 Oh - I changed the topic name in the program, but not in the configuration
-file `avro_sink.json`. That means the connector was sitting waiting for data
+file `pg_avro_sink.json`. That means the connector was sitting waiting for data
 in a topic that doesn't exist.
 
 Edit the file to have:
@@ -766,7 +766,7 @@ Edit the file to have:
 and stop/restart the connector:
 ```shell
 avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_avro_karapace
-avn service connector create $KAFKA_SERVICE_NAME @avro_sink.json
+avn service connector create $KAFKA_SERVICE_NAME @pg_avro_sink.json
 ```
 
 And now it's failing with:
@@ -800,7 +800,13 @@ which I suppose makes sense - but is the schema for the key *just* the schema
 for the key, or can I re-use the existing schema? And surely if it's a
 different schema it will have a different id???
 
-...**oh** - my `avro_sink.json` has `"pk.mode": "record_key"` instead of
+The JDBC connector appears to follow Confluent's [Subject name
+strategy](https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#subject-name-strategy)
+for its schema usage, ...so thus `<topic-name>-value`. It may be possible to
+alter that with the configuration file, but it didn't seem worth trying for
+this demo.
+
+...**oh** - my `pg_avro_sink.json` has `"pk.mode": "record_key"` instead of
 `"pk.mode": "record_value"` - I'm telling it the wrong thing! Let's fix the
 configuration and restart the connector...
 
@@ -817,43 +823,6 @@ defaultdb=> select * from demo6_cod_and_chips ;
  1689238497410 |     6 | {"cod & chips","chips & chips"}
  1689238498697 |     7 | {"cod & chips"}
  1689238499737 |     8 | {chips}
-```
-
------------
-
-Check which of these I have discussed / should have diccussed:
-``` shell
-curl "$KARAPACE_REST_URI/topics"
-curl $KARAPACE_REGISTRY_URI/schemas/ids/5
-curl $KARAPACE_REGISTRY_URI/subjects
-curl $KARAPACE_REGISTRY_URI/subjects/demo6
-curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions
-curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions/5
-curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest
-curl $KARAPACE_REGISTRY_URI/subjects/demo6/versions/latest | jq
-curl $KARAPACE_REGISTRY_URI/subjects/schemas/ids/5
-curl -X DELETE $KARAPACE_REGISTRY_URI/subjects/demo6
-
-
-
-avn service cli $PG_SERVICE_NAME
-avn service connector create $KAFKA_SERVICE_NAME @avro_sink.json
-avn service connector create $KAFKA_SERVICE_NAME @pg_sink.json
-avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
-avn service connector delete $KAFKA_SERVICE_NAME sink_iot_json_schema
-avn service connector list $KAFKA_SERVICE_NAME
-avn service connector restart $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
-avn service connector schema $KAFKA_SERVICE_NAME io.debezium.connector.sqlserver.SqlServerConnector
-avn service connector status $KAFKA_SERVICE_NAME
-avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
-avn service connector status $KAFKA_SERVICE_NAME sink_io_json_schema
-avn service get tibs-kafka-fish --json | jq
-avn service help
-avn service wait $KAFKA_SERVICE_NAME
-avn user login tony.ibbs@aiven.io --token
-set -x KAFKA_REST_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.kafka_rest_uri')
-set -x KAFKA_REST_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
-set -x SCHEMA_REGISTRY_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
 ```
 
 -----------
