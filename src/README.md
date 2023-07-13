@@ -553,7 +553,9 @@ avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
 
 -----------
 
-Discussion: is the array of strings actually a better representation of an
+## Is an array of strings a better order structure?
+
+Is the array of strings actually a better representation of an
 order than an array of arrays of strings? In a real situation, we'd have
 "names" for menu items - hence `"chips & chips"` would *actually* be `"large
 chips"`, and the price for `"cod & chips"` might be different than the sum of
