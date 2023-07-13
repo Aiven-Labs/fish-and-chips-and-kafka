@@ -3,7 +3,7 @@
 The first part of this README talks about the original demo programs, written
 for the talk itself.
 
-The [second part](#write-to-postgresql-with-a-jdbc-kafka-connector) looks at the homework suggestions, and provides some code
+The [second part](#homework-solutions) looks at the "homework" suggestions, and provides some code
 relating to them.
 
 At the very end, there are some links to [Other resources](#other-resources).
@@ -323,7 +323,10 @@ Let me know if you play with these ideas!
 
 --------
 
-# Write to PostgreSQL with a JDBC Kafka Connector
+## Homework solutions
+
+Following are programs that look at some of the work suggested in [Other
+things to do](#other-things-to-do).
 
 All of the following assume you've already done the first few demos,
 especially the [set up](#set-up).
