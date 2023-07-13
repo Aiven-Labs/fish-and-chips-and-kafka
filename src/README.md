@@ -1,6 +1,14 @@
 # Demo code for "Fish and Chips and Apache Kafka®"
 
-## What we have here
+The first part of this README talks about the original demo programs, written
+for the talk itself.
+
+The [second part](#write-to-postgresql-with-a-jdbc-kafka-connector) looks at the homework suggestions, and provides some code
+relating to them.
+
+At the very end, there are some links to [Other resources](#other-resources).
+
+## The original demo programs, used in the talk
 
 Two "proof of concept" programs:
 
@@ -315,9 +323,14 @@ Let me know if you play with these ideas!
 
 --------
 
-# Write to PostgreSQL with a JDBC Kafka Connector and JSON
+# Write to PostgreSQL with a JDBC Kafka Connector
 
-## Our demo code
+All of the following assume you've already done the first few demos,
+especially the [set up](#set-up).
+
+## Write to PostgreSQL with a JDBC Kafka Connector and JSON
+
+### Our demo code
 
 [`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py)
 
@@ -340,7 +353,7 @@ We need to make the following changes to the code:
 > the JSON mechanism doesn't currently support that, so we need to have an
 > explicit schema in each message.
 
-## Create a PostgreSQL database
+### Create a PostgreSQL database
 
 First create the PostgreSQL database (note: a free tier database will do, or a
 hobbyist plan should be plenty).
@@ -370,7 +383,7 @@ and again wait for it to finish starting up:
 avn service wait $PG_SERVICE_NAME
 ```
 
-## Create the target database table
+### Create the target database table
 
 Next we need to connect to the PostgreSQL database and create a table to write
 to. Here I'm using the `avn` command to connect to the database, but you could
@@ -398,7 +411,7 @@ CREATE TABLE demo5_cod_and_chips (
 > `int64` in the JSON schema maps to `bigint` in PostgreSQL, and an array of
 > strings is `text[]`.
 
-## Upgrade the Aiven for Apache Kafka service to allow service integrations
+### Upgrade the Aiven for Apache Kafka service to allow service integrations
 
 Since we're going to use a JDBC connector with our Kafka, that means using a
 service integration (between Kafka and our PostrgreSQL database), and so we
@@ -416,7 +429,7 @@ and again wait for the service to finish updating itself:
 avn service wait $KAFKA_SERVICE_NAME
 ```
 
-## Set up the sink connector configuration
+### Set up the sink connector configuration
 
 We're now going to follow the instructions at
 [Create a JDBC sink connector to PostgreSQL® on a topic with a JSON schema](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink#example-create-a-jdbc-sink-connector-to-postgresql-on-a-topic-with-a-json-schema)
@@ -474,7 +487,7 @@ All the upper case values come from appropriate places in the Aiven
 Console, or can doubtless be found using `avn service` commands, *with the
 exception of `USER_INFO`, which is meant to be left as it is*.
 
-## Create the sink connector
+### Create the sink connector
 
 Now we should be able to create the connector:
 ``` shell
@@ -500,7 +513,7 @@ We can check the status of the connector as follows:
 avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
 ```
 
-## Run the demo program
+### Run the demo program
 
 We can now run the program:
 ```shell
@@ -528,7 +541,7 @@ program did, and how long it ran):
  1689159333343 |     6 | {"cod & chips"}
 ```
 
-## Deleting the sink connector
+### Deleting the sink connector
 
 If you want to delete the connector, then use:
 ```shell
@@ -553,9 +566,9 @@ interpret as meaning "cod and chips".
 
 ---------
 
-# Write to PostgreSQL with a JDBC Kafka Connector, Avro and Karapace
+## Write to PostgreSQL with a JDBC Kafka Connector, Avro and Karapace
 
-## Our demo code
+### Our demo code
 
 [`demo6_avro_output_to_pg.py`](demo6_avro_output_to_pg.py) is a version of
 [`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py) that uses Avro instead of
@@ -583,7 +596,7 @@ Aiven for Apache Kafka services have in-built support for Karapace
 (you may have noticed us specifying the `schema_registry=true` option when we
 created our Kafka service).
 
-## Create a PostgreSQL database
+### Create a PostgreSQL database
 
 You can skip this section if you already created the database for demo5,
 above - but make sure that the environment variable `$PG_SERVICE_NAME` is
@@ -617,7 +630,7 @@ and again wait for it to finish starting up:
 avn service wait $PG_SERVICE_NAME
 ```
 
-## Create the target database table
+### Create the target database table
 
 Next we need to connect to the PostgreSQL database and create a table to write
 to. Here I'm using the `avn` command to connect to the database, but you could
@@ -648,7 +661,7 @@ database is the same.)
 > `int64` in the JSON schema maps to `bigint` in PostgreSQL, and an array of
 > strings is `text[]`.
 
-## Upgrade the Aiven for Apache Kafka service to allow service integrations
+### Upgrade the Aiven for Apache Kafka service to allow service integrations
 
 Again, if you already followed the instructions for demo5, you can skip this
 section. Otherwise, let's upgrade our service.
@@ -669,7 +682,7 @@ and again wait for the service to finish updating itself:
 avn service wait $KAFKA_SERVICE_NAME
 ```
 
-## Remember the schema registry URI
+### Remember the schema registry URI
 
 Set an environment variable to the schema registry URI:
 Using bash:
@@ -682,7 +695,7 @@ Using the Fish shell:
 set -x SCHEMA_REGISTRY_URI (avn service get tibs-kafka-fish --json | jq -r '.connection_info.schema_registry_uri')
 ```
 
-## Install extra Python packages
+### Install extra Python packages
 
 In order to use Avro for our messages, we need to install a Python package that
 understands the format. We shall use the Apache
@@ -697,7 +710,7 @@ We're also going to need `httpx` (a more modern alternative to `requests`):
 pip install httpx
 ```
 
-## Set up the sink connector configuration
+### Set up the sink connector configuration
 
 This time we're following the instructions at [Define a Kafka Connect
 configuration
@@ -769,7 +782,7 @@ All the upper case values come from appropriate places in the Aiven
 Console, or can doubtless be found using `avn service` commands, *with the
 exception of `USER_INFO`, which is meant to be left as it is*.
 
-## Create the sink connector
+### Create the sink connector
 
 So let's create our connector:
 ```shell
@@ -796,7 +809,7 @@ We can check the status of the connector as follows:
 avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_avro_karapace
 ```
 
-## Run the demo program
+### Run the demo program
 
 We can now run the program:
 ```shell
@@ -827,14 +840,14 @@ defaultdb=> select * from demo6_cod_and_chips ;
  1689238499737 |     8 | {chips}
 ```
 
-## Deleting the sink connector
+### Deleting the sink connector
 
 If you want to delete the connector, then use:
 ```shell
 avn service connector delete $KAFKA_SERVICE_NAME sink_fish_chips_avro_karapace
 ```
 
-## More information on how the JDBC connector works with Avro messages
+### More information on how the JDBC connector works with Avro messages
 
 We're using the
 [`io.aiven.connect.jdbc.JdbcSinkConnector`](https://github.com/aiven/jdbc-connector-for-apache-kafka/blob/master/docs/sink-connector.md),
@@ -895,7 +908,7 @@ topic name and `-value`.
 
 --------
 
-# Other resources
+## Other resources
 
 You may also be interested in
 
@@ -911,7 +924,7 @@ You may also be interested in
 - The [Apache Kafka®](https://aiven.io/developer/kafka) section of the [Aiven
   developer center](https://aiven.io/developer) for longer articles.
 
-# Thanks
+## Thanks
 
 Thanks to the Stack Overflow article [Textual (Python TUI) - Enabling
 long-running, external asyncio
