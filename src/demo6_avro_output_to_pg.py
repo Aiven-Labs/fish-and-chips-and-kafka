@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-"""demo6_output_to_pg.py - A model of a very simple fish and chips shop
+"""demo6_avro_output_to_pg.py - A model of a very simple fish and chips shop
 
 One till, one food preparer, and output to PostgreSQL via a JDBC sink
 connector. That last mostly happens outside our concern.
 
-This version uses Avro to encode messaages, rather than JSON.
+This version uses Avro to encode messaages, rather than JSON, and
+Karapace as a schema registry.
 
-Note: writes log messages to the file demo56.log.
+Note: writes log messages to the file demo6.log.
 """
 
 import asyncio
@@ -44,6 +45,7 @@ DEMO_ID = 6
 LOG_FILE = f'demo{DEMO_ID}.log'
 
 # Use underlines so that the topic name will also work as an Avro schema name
+# (the JDBC connector wants the names to match, at least by default)
 TOPIC_NAME = f'demo{DEMO_ID}_cod_and_chips'
 
 
@@ -55,12 +57,12 @@ logging.basicConfig(
 )
 
 
-# If the environment variable is set, we want to use it
+# If environment variables are set, we want to use them
 KAFKA_SERVICE_URI = os.environ.get('KAFKA_SERVICE_URI')
 SCHEMA_REGISTRY_URI = os.environ.get('SCHEMA_REGISTRY_URI')
 
 
-# We're going to keep the same schema as in demo5, so we can produce
+# We're going to keep the same message format as in demo5, so we can produce
 # equivalent tables in PostgreSQL
 AVRO_SCHEMA = {
     'doc': 'A fish and chip shop order',
@@ -79,14 +81,20 @@ AVRO_SCHEMA = {
 }
 
 
+# When we're passing the Avro schema around, we need to pass it as a string
 AVRO_SCHEMA_AS_STR = json.dumps(AVRO_SCHEMA)
 
 
+# Parsing the schema both validates it, and also puts it into a form that
+# can be used when envoding/decoding message data
 PARSED_SCHEMA = avro.schema.parse(AVRO_SCHEMA_AS_STR)
 
 
 def register_schema(schema_uri):
-    """Register our schema with Karapace"""
+    """Register our schema with Karapace.
+
+    Returns the schema id, which gets embedded into the messages.
+    """
     r = httpx.post(
         f'{schema_uri}/subjects/{TOPIC_NAME}-value/versions',
         json={"schema": AVRO_SCHEMA_AS_STR}
@@ -97,7 +105,8 @@ def register_schema(schema_uri):
 
 
 def pretty_order(order):
-    """Redefine this to cope with the "flattened" order parts"""
+    """We redefine this function to cope with the "flattened" order parts
+    """
     parts = []
     if 'count' in order:
         parts.append(f'{order["count"]}:')
@@ -160,20 +169,22 @@ class TillWidget(DemoWidget):
         # Add a timestamp
         order['order_time'] = timestamp()
 
+        # The Avro encoder works by writing to a "file like" object,
+        # so we shall use a BytesIO instance.
         writer = avro.io.DatumWriter(PARSED_SCHEMA)
         byte_data = io.BytesIO()
 
         # According to
         # https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format
         # (Confluent Developer > Platform > Schema Management > Fundamentals > Schema Formats > WIre format)
-        # the Avro messages use the first few bytes to specify which schema they are following,
-        # which allows the sink connector to know how to read the message,
-        # We'll just prepend the bytes by hand - it's a 0 byte followed by four bytes
-        # for the schema id
+        # the Confluent JDBC Connector needs us to put the schema id on the front of
+        # each Avro message. We need to prepend a 0 byte and then the schema
+        # id as a 4 byte value.
+        # We'll just do this by hand using the Python `struct` library.
         header = struct.pack('>bI', 0, self.schema_id)
         byte_data.write(header)
 
-        # And then we write the actual data
+        # And then we add the actual data
         encoder = avro.io.BinaryEncoder(byte_data)
         writer.write(order, encoder)
         raw_bytes = byte_data.getvalue()
@@ -225,7 +236,14 @@ class FoodPreparerWidget(DemoWidget):
     async def prepare_order(self, raw_bytes):
         """Prepare an order"""
         # We need to ignore the first 5 bytes, as they're the 0 byte
-        # plus schema id
+        # plus schema id.
+        # (Since we already know the schema, and since it's this program
+        # that wrote the messages, there's no point to checking if the
+        # schema id is the same as we expect, or in trying to actually
+        # look up the schema from the registry.)
+        #
+        # Again, we need to read from a "file like" object, which
+        # BytesIO lets us do.
         byte_data = io.BytesIO(raw_bytes[5:])
 
         decoder = avro.io.BinaryDecoder(byte_data)
@@ -234,7 +252,7 @@ class FoodPreparerWidget(DemoWidget):
 
         self.add_line(f'Order {pretty_order(order)}')
 
-        # Pretend to take some time wrapping it!
+        # Pretend to take some time wrapping up the fish and chips!
         await asyncio.sleep(random.uniform(PREP_FREQ_MIN, PREP_FREQ_MAX))
 
         # And now it's ready
@@ -307,9 +325,18 @@ def main(kafka_uri, certs_dir, schema_uri):
     except Exception as e:
         print(f'Error loading SSL certificates from {certs_path}')
         print(f'{e.__class__.__name__} {e}')
+        logging.error(f'Error loading SSL certificates from {certs_path}')
+        logging.error(f'{e.__class__.__name__} {e}')
         return -1
 
-    schema_id = register_schema(schema_uri)
+    try:
+        schema_id = register_schema(schema_uri)
+    except Exception as e:
+        print(f'Error registering schema at {schema_uri}')
+        print(f'{e.__class__.__name__} {e}')
+        logging.error(f'Error registering schema at {schema_uri}')
+        logging.error(f'{e.__class__.__name__} {e}')
+        return -1
 
     setup_topics(kafka_uri, ssl_context, {TOPIC_NAME: 1})
 

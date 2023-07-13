@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""demo5_output_to_pg.py - A model of a very simple fish and chips shop
+"""demo5_json_output_to_pg.py - A model of a very simple fish and chips shop
 
 One till, one food preparer, and output to PostgreSQL via a JDBC sink
 connector. That last mostly happens outside our concern.
@@ -10,7 +10,6 @@ Note: writes log messages to the file demo5.log.
 
 import asyncio
 import datetime
-import json
 import logging
 import os
 import pathlib
@@ -80,7 +79,8 @@ JSON_SCHEMA = {
 
 
 def pretty_order(order):
-    """Redefine this to cope with the "flattened" order parts"""
+    """We redefine this function to cope with the "flattened" order parts
+    """
     parts = []
     if 'count' in order:
         parts.append(f'{order["count"]}:')

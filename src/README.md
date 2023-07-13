@@ -310,7 +310,7 @@ Let me know if you play with these ideas!
 
 # Use a JDBC Kafka Connector and JSON
 
-[`demo5_output_to_pg.py`](demo5_output_to_pg.py)
+[`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py)
 
 This is based on
 [`demo1_cod_and_chips.py`](demo1_cod_and_chips.py).
@@ -433,7 +433,7 @@ following as a template:
 1. I've changed the connector `name` to something more appropriate.
 
 2. The value for `topics` needs to match the topic name specified in
-   [`demo5_output_to_pg.py`](demo5_output_to_pg.py) - that is,
+   [`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py) - that is,
    `demo5-cod-and-chips`.
    
 3. By default, the table written to will have the same name as the topic.
@@ -482,7 +482,7 @@ avn service connector status $KAFKA_SERVICE_NAME sink_fish_chips_json_schema
 
 If we now run the program:
 ```shell
-./demo5_output_to_pg.py
+./demo5_json_output_to_pg.py
 ```
 it will work as we expect. As normal, we can stop it by typing `q`.
 
@@ -531,7 +531,7 @@ interpret as meaning "cod and chips".
 # Use a JDBC Kafka Connector, Avro and Karapace
 
 If we don't want to pass the schema information with every message, then we
-need to use a schema repository, that both sender and receiver can use to
+need to use a schema repository, so that both sender and receiver can use to
 interpret the messages (in the exact same way).
 
 We're going to use [`karapace`](https://www.karapace.io/) which is an open
@@ -570,8 +570,8 @@ We're also going to need `httpx` (a more modern alternative to `requests`):
 pip install httpx
 ```
 
-[`demo6_output_to_pg_avro.py`](demo6_output_to_pg_avro.py) is a version of
-[`demo5_output_to_pg.py`](demo5_output_to_pg.py) that uses Avro instead of
+[`demo6_avro_output_to_pg.py`](demo6_avro_output_to_pg.py) is a version of
+[`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py) that uses Avro instead of
 JSON.
 
 1. It gains a command line option for the Karapace URI (and an equivalent
@@ -646,7 +646,7 @@ avn service connector create $KAFKA_SERVICE_NAME @avro_sink.json
 
 and run our demo program:
 ```shell
-./demo6_output_to_pg_avro.py
+./demo6_avro_output_to_pg.py
 ```
 
 Unfortunately the connector fails with
