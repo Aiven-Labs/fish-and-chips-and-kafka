@@ -99,6 +99,8 @@ def register_schema(schema_uri):
         f'{schema_uri}/subjects/{TOPIC_NAME}-value/versions',
         json={"schema": AVRO_SCHEMA_AS_STR}
     )
+    r.raise_for_status()
+
     logging.info(f'Registered schema {r} {r.text=} {r.json()=}')
     response_json = r.json()
     return response_json['id']
