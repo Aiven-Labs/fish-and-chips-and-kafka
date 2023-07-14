@@ -13,7 +13,11 @@ Fish and Chips and Apache Kafka\ :sup:`®`
     Slides and source code at
     https://github.com/aiven-labs/fish-and-chips-and-kafka
 
-    Tutorial still to come...
+    .. raw:: pdf
+
+       Spacer 0 30
+
+    Tutorial to come...
 
 .. footer::
 
@@ -656,8 +660,7 @@ Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to
 Fin
 ---
 
-Get a free trial of Aiven services at
-https://console.aiven.io/signup/email
+Get a free trial of Aiven services at https://go.aiven.io/tibs-signup
 
 Also, we're hiring! See https://aiven.io/careers
 

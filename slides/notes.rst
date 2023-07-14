@@ -9,37 +9,30 @@ Fish and Chips and Apache Kafka\ :sup:`®`
 
     Tutorial at https://aiven.io/developer/fish-and-chips-and-kafka
 
-    Me at https://aiven.io/community/devrel/tibs
+    Find me at https://aiven.io/tibs
 
-    *or something*
+    Tutorial stil to come...
 
 -----
 
-    I'm a Developer Educator at Aiven.
+I'm a Developer Educator at Aiven.
 
-    Aiven: The trusted
-    open source data
-    platform for everyone.
+| Aiven: The trusted
+| open source data
+| platform for everyone.
 
-    Since 2022, I've been working as a Developer Educator at Aiven.
-    Before that I was a software developer for many years, and the last decade or
-    so was working with cloud technologies, doing backend web stuff.
+Since 2022, I've been working as a Developer Educator at Aiven.
+Before that I was a software developer for many years, and the last decade or
+so was working with cloud technologies, doing backend web stuff.
 
-    As a Developer Educator, that means I get paid to
-    understand (and then explain) various things that I'd never before had the
-    time to get a proper understanding of, and that includes Apache Kafka®, which
-    I want to tell you about today.
+As a Developer Educator, that means I get paid to
+understand (and then explain) various things that I'd never before had the
+time to get a proper understanding of, and that includes Apache Kafka®, which
+I want to tell you about today.
 
-    As I work for Aiven, and Aiven's aim
-    is to make developers lives easier, by providing
-
-    The trusted
-    open source data
-    platform for everyone.
-
-    the demos I'll show use the Aiven platform, but that's not required - it's
-    just super convenient for me. And the demos are recorded, because I don't want
-    to risk wifi at a conference.
+The demos I'll show use the Aiven platform, but that's not required - it's
+just super convenient for me. And the demos are recorded, because I don't want
+to risk wifi at a conference.
 
 
 What we'll cover
@@ -149,8 +142,9 @@ Messages are *Events*
 
 Can have multiple Producers and Consumers
 
-A Producer send a message to a named *Topic*,
-each Consumer reads from a single Topic
+A Producer send messages to (one or more) named *Topics*
+
+Each Consumer reads from (one or more) Topics
 
 *Partitions* can be used to "spread the load" within a Topic
 
@@ -255,14 +249,14 @@ We start with a shop that
 Glossary
 --------
 
-.. I'm sure everyone loves a glossary
-
 * **Cod**: the traditional white fish for english fish-and-chip shops
 * **Chips**: fatter, possibly soggier, french fries
 * **Plaice**: a flat fish
 * **Till**: a cash register
 
 ----
+
+I'm sure everyone loves a glossary
 
 The thing that the chips are in ... basket? Fryer?
 
@@ -930,8 +924,7 @@ Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to
 Fin
 ---
 
-Get a free trial of Aiven services at
-https://console.aiven.io/signup/email
+Get a free trial of Aiven services at https://go.aiven.io/tibs-signup
 
 Also, we're hiring! See https://aiven.io/careers
 
@@ -959,6 +952,11 @@ https://github.com/aiven-labs/fish-and-chips-and-kafka
 .. _reStructuredText: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _rst2pdf: https://rst2pdf.org/
 .. _Aiven: https://aiven.io/
+
+-------
+
+Using that free trial link will give an extra 100 USD, making it one month or
+400 USD. And not forgetting the actual free options for PostgreSQL, MySQL and Redis.
 
 Unused Redis slides
 -------------------
