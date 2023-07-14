@@ -66,6 +66,12 @@ python -m venv venv
 source venv/bin/activate
 ```
 
+If you're using the [Fish shell](https://fishshell.com/) (like me) you'd
+activate with:
+```shell
+source venv/bin/activate.fish
+```
+
 Install the necessary Python packages, using the `requirements.txt` file:
 ```shell
 python -m pip install -r requirements.txt
@@ -149,7 +155,7 @@ you'd do:
 ```shell
 export KAFKA_SERVICE_NAME=tibs-kafka-fish
 ```
-and if you're using the [Fish shell](https://fishshell.com/) (like me) you'd do:
+and if you're using the Fish shell you'd do:
 ```shell
 set -x KAFKA_SERVICE_NAME tibs-kafka-fish
 ```
@@ -216,7 +222,7 @@ It's useful to put that into an environment variable. With Bash, you can do:
 export KAFKA_SERVICE_URI=$(avn service get $KAFKA_SERVICE_NAME --format '{service_uri}')
 ```
 
-and if you're using the Fish shell (like me) that's
+and if you're using the Fish shell that's
 ```shell
 set -x KAFKA_SERVICE_URI (avn service get $KAFKA_SERVICE_NAME --format '{service_uri}')
 ```
@@ -259,6 +265,10 @@ or:
 ``` shell
 ./demo1_cod_and_chips.py -k $KAFKA_SERVICE_URI -d certs
 ```
+
+> **Note** demo programs 1 through 4 will just run. The other demos, which
+> relate to the "homework" mentioned in the talk, have extra setup - see
+> [homework solutions](#homework-solutions) for how to use them.
 
 ## Log files
 
@@ -513,7 +523,7 @@ To get a list of the service connectors (as a JSON structure) attached to this K
 avn service connector list $KAFKA_SERVICE_NAME
 ```
 
-To find out more about the connector, go to the Aiven console and the service
+To find out more about the connector, go to the [Aiven console](https://console.aiven.io/) and the service
 page for our Kafka, and look at the **Connectors** tab. If there are errors,
 then you'll see a warning triangle symbol next to the "Tasks" value for the
 connector, and clicking on that will give the Java stacktrace.
@@ -721,7 +731,8 @@ understands the format. We shall use the Apache
 pip install avro
 ```
 
-We're also going to need `httpx` (a more modern alternative to `requests`):
+We're also going to need `httpx` (a more modern alternative to `requests`)
+which we'll use to talk to Karapace:
 ```shell
 pip install httpx
 ```
@@ -815,7 +826,7 @@ To get a list of the service connectors (as a JSON structure) attached to this K
 avn service connector list $KAFKA_SERVICE_NAME
 ```
 
-To find out more about the connector, go to the Aiven console and the service
+To find out more about the connector, go to the [Aiven console](https://console.aiven.io/) and the service
 page for our Kafka, and look at the **Connectors** tab. If there are errors,
 then you'll see a warning triangle symbol next to the "Tasks" value for the
 connector, and clicking on that will give the Java stacktrace.
