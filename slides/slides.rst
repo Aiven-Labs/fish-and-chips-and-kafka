@@ -364,7 +364,7 @@ Web console
 .. When the image fits the (default) page, it's rather too small to be useful
 
 .. image:: images/console-overview.png
-   :width: 90%
+   :width: 70%
 
 Topics in the web console
 -------------------------
@@ -655,7 +655,7 @@ https://github.com/aiven-labs/fish-and-chips-and-kafka
 
 .. image:: images/qr_fish_chips_kafka.png
     :align: right
-    :scale: 90%
+    :scale: 80%
 
 .. And that's the end of the slideshow
 
