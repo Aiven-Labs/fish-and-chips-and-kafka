@@ -11,8 +11,8 @@ At the very end, there are some links to [Other resources](#other-resources).
 **Overview**
 
 * [The demo programs used in the
-  talk](#the-original-demo-programs-used-in=the-talk); how to set things up,
-  get started with Aiven for Apache Kafka®. and run the demos.
+  talk](#the-original-demo-programs-used-in=the-talk): how to set things up,
+  get started with Aiven for Apache Kafka®, and run the demos.
 
 * [Other things to do](#other-things-to-do) and [Homework solutions](#homework-solutions)
 
