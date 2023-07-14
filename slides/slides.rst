@@ -170,16 +170,11 @@ An order
       ]
    }
 
-Show demo: 1 till, 1 food preparer
-----------------------------------
+Demo: 1 till, 1 food preparer
+-----------------------------
 
-.. raw:: pdf
-
-   Spacer 0 30
-
-1 till, 1 food preparer
-
-<insert a picture of the TUI running>
+.. image:: images/demo1.png
+   :width: 50%
 
 
 Libraries
@@ -289,18 +284,13 @@ When creating the topic for the demo, request 3 partitions:
 
 Create 3 Till producers instead of 1
 
-Show demo: 3 TILLs, 3 partitions
---------------------------------
-
-.. raw:: pdf
-
-   Spacer 0 30
-
-Three tills, 3 partitions, 1 food preparer
+Demo: 3 TILLs, 3 partitions, 1 PREPARER
+---------------------------------------
 
 .. but now the food producer is too busy
 
-<insert a picture of the TUI running>
+.. image:: images/demo2.png
+   :width: 50%
 
 
 Add multiple *consumers*
@@ -362,16 +352,11 @@ Sending to different partitions
     await producer.send(TOPIC_NAME, value=order, partition=till_number-1)
 
 
-Show demo: 3 TILLs, 2 PREPARERS
--------------------------------
+Demo: 3 TILLs, 3 partitions, 2 PREPARERS
+----------------------------------------
 
-.. raw:: pdf
-
-   Spacer 0 30
-
-3 tills, 3 partitions, 2 food preparers
-
-<insert a picture of the TUI running>
+.. image:: images/demo3.png
+   :width: 50%
 
 Web console
 -----------
@@ -520,16 +505,11 @@ In the new COOK
    cache is provided, because then the check for "ready" would be replaced by a
    check against the cache).
 
-Show demo: with COOK
---------------------
+Demo: with COOK
+---------------
 
-.. raw:: pdf
-
-   Spacer 0 30
-
-1 till, 1 food preparer, 1 COOK (back to 1 partition)
-
-<insert a picture of the TUI running>
+.. image:: images/demo4.png
+   :width: 50%
 
 
 Summary so far
