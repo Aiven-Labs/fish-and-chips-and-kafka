@@ -655,7 +655,7 @@ https://github.com/aiven-labs/fish-and-chips-and-kafka
 
 .. image:: images/qr_fish_chips_kafka.png
     :align: right
-    :scale: 80%
+    :scale: 85%
 
 .. And that's the end of the slideshow
 
