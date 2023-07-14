@@ -217,6 +217,12 @@ class CookWidget(DemoWidget):
         self.add_line(f'Order {order["count"]} available')
 
 
+class EmptyPane(DemoWidget):
+
+    async def background_task(self):
+        pass
+
+
 class MyGridApp(App):
 
     BINDINGS = [
@@ -241,12 +247,14 @@ class MyGridApp(App):
             'Cook', self.kafka_uri, self.ssl_context, self.orders_topic, self.cook_topic,
         )
 
+        empty = EmptyPane("")
+
         with Horizontal():
             with Vertical():
                 yield producer
+                yield empty
             with Vertical():
                 yield consumer
-            with Vertical():
                 yield cook
 
 
