@@ -34,6 +34,7 @@ The demos I'll show use the Aiven platform, but that's not required - it's
 just super convenient for me. And the demos are recorded, because I don't want
 to risk wifi at a conference.
 
+----
 
 What we'll cover
 ----------------
@@ -77,6 +78,8 @@ Respectively, maybe want:
 * a state machine and/or a persistent key/value store
 * Apache Kafka
 
+----
+
 What I want from messaging
 --------------------------
 
@@ -94,6 +97,8 @@ Just don't, really.
 
 Mainly it means you have to *implement* all of a queuing system, over
 something that is designed for different purposes / constraints.
+
+----
 
 Enter, Apache Kafka\ :sup:`®`
 -----------------------------
@@ -132,6 +137,8 @@ From Olena Kutsenko's blog post `Apache Kafka® simply explained`_:
   amazing developers who solved similar issues already.
 
 .. _`Apache Kafka® simply explained`: https://aiven.io/blog/kafka-simply-explained
+
+----
 
 Kafka terms
 -----------
@@ -236,6 +243,8 @@ Finally, remember that:
 
 * a consumer consumes (retrieves) messages from one or more topics
 
+----
+
 Let's model a fish-and-chip shop
 --------------------------------
 
@@ -263,6 +272,8 @@ The thing that the chips are in ... basket? Fryer?
 Also, Food Preparer is clumsy, but the alternative "Server" would get very
 confusing in the context of cloud services...
 
+----
+
 
 Serving a customer
 ------------------
@@ -282,6 +293,8 @@ Serving a customer
 The CUSTOMER is implicit, and we'll not show them in future diagrams, nor do
 we model them directly.
 
+----
+
 
 An order
 --------
@@ -298,16 +311,11 @@ An order
 
 ----
 
-Show demo: 1 till, 1 food preparer
-----------------------------------
+Demo: 1 till, 1 food preparer
+-----------------------------
 
-.. raw:: pdf
-
-   Spacer 0 30
-
-1 till, 1 food preparer
-
-<insert a picture of the TUI running>
+.. image:: images/demo1.png
+   :width: 50%
 
 ----
 
@@ -424,6 +432,8 @@ An order with multiple TILLs
 
 We're just adding the ``till`` value to the same JSON we had before.
 
+----
+
 How we alter the code
 ---------------------
 
@@ -445,18 +455,13 @@ Create 3 Till producers instead of 1
 
 ----
 
-Show demo: 3 TILLs, 3 partitions
---------------------------------
-
-.. raw:: pdf
-
-   Spacer 0 30
-
-Three tills, 3 partitions, 1 food preparer
+Demo: 3 TILLs, 3 partitions, 1 PREPARER
+---------------------------------------
 
 .. but now the food producer is too busy
 
-<insert a picture of the TUI running>
+.. image:: images/demo2.png
+   :width: 50%
 
 ----
 
@@ -480,6 +485,8 @@ Add multiple *consumers*
 
 Note that the number of consumers (food preparers) needs to less than, or
 equal to, the number of tills (or, more precisely, to the number of partitions).
+
+----
 
 How we alter the code
 ---------------------
@@ -531,16 +538,11 @@ Sending to different partitions
 ----
 
 
-Show demo: 3 TILLs, 2 PREPARERS
--------------------------------
+Demo: 3 TILLs, 3 partitions, 2 PREPARERS
+----------------------------------------
 
-.. raw:: pdf
-
-   Spacer 0 30
-
-3 tills, 3 partitions, 2 food preparers
-
-<insert a picture of the TUI running>
+.. image:: images/demo3.png
+   :width: 50%
 
 ----
 
@@ -550,7 +552,7 @@ Web console
 .. When the image fits the (default) page, it's rather too small to be useful
 
 .. image:: images/console-overview.png
-   :width: 90%
+   :width: 70%
 
 ----
 
@@ -596,8 +598,10 @@ Plaice needs to be cooked
 
 So we need a COOK to cook it
 
-.. Keep it to the simple cod-and-chips order from demo 1, with COOK added, so it
-   isn't too complicated to explain
+-------
+
+Keep it to the simple cod-and-chips order from demo 1, with COOK added, so it
+isn't too complicated to explain
 
 ----
 
@@ -665,6 +669,8 @@ Again, the same JSON, but now we're adding a ``ready`` boolean to indicate "is
 this ready to be served to the customer" - that is, are all the items in the
 order ready in the hot cabinet.
 
+----
+
 Code changes to the PREPARER
 ----------------------------
 
@@ -713,6 +719,8 @@ In other words:
   order, then the PREPARER sets "ready" to False, and the order is sent to the
   [COOK] topic for the COOK.
 
+----
+
 
 In the new COOK
 ---------------
@@ -737,17 +745,14 @@ topic.
 The PREPARER will see the order again, and because the "ready" flag is True,
 will now serve it to the customer.
 
+----
 
-Show demo: with COOK
---------------------
 
-.. raw:: pdf
+Demo: with COOK
+---------------
 
-   Spacer 0 30
-
-1 till, 1 food preparer, 1 COOK (back to 1 partition)
-
-<insert a picture of the TUI running>
+.. image:: images/demo4.png
+   :width: 50%
 
 ----
 
@@ -797,37 +802,7 @@ This last is why the slightly icky "setting a boolean flag" trick isn't so
 bad, as it is sort of simulating what we are doing above. It would be worth
 explaining this, at this point
 
-
-
-..
-   Optional: Start of day
-   ----------------------
-
-   .. raw:: pdf
-
-      Spacer 0 10
-
-   .. image:: images/homework-redis-1.svg
-      :width: 70%
-
-   Optional: Cod and chips
-   -----------------------
-
-   .. raw:: pdf
-
-      Spacer 0 10
-
-   .. image:: images/homework-redis-2.svg
-      :width: 100%
-
-   Optional: Plaice and chips
-   --------------------------
-
-   .. image:: images/homework-redis-3.svg
-      :width: 90%
-
-
-
+----
 
 Homework 2: Adding an ANALYST
 -----------------------------
@@ -872,6 +847,8 @@ consumer that writes to PG - but Kafka Connect will scale with Kafka itself,
 and doesn't involve having to write new Python code (and thus also doesn't
 take resources from the Python client)
 
+----
+
 
 
 How I would do it
@@ -879,6 +856,7 @@ How I would do it
 
 The Aiven developer documentation
 has instructions on how to do this at
+
 https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink.html
 
 * Create an appropriate PostgreSQL database and table
@@ -887,6 +865,12 @@ https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink.html
 
 And then add code to the Python demo to query PostgreSQL and make some sort of
 report over time.
+
+----
+
+And in fact demo programs 5 and 6 in the Aiven-Labs repository show how to use
+Kafka Connnect with either JSON messages or Avro messages and using the
+Karapace schema repository.
 
 ----
 
@@ -902,6 +886,8 @@ We made a simple model for orders with plaice
 We talked briefly about how one might model the hot cabinet in more detail
 
 We talked briefly about using Kafka Connectors to share data with other data users
+
+----
 
 Acknowledgements
 ----------------
@@ -919,7 +905,7 @@ PostgreSQL Community Association of Canada, and used with their permission
 
 Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd.
 
-.. -----------------------------------------------------------------------------
+----
 
 Fin
 ---
@@ -938,8 +924,6 @@ Slides and accompanying material |cc-attr-sharealike| at
 https://github.com/aiven-labs/fish-and-chips-and-kafka
 
 .. image:: images/qr_fish_chips_kafka.png
-    :align: right
-    :scale: 90%
 
 .. And that's the end of the slideshow
 
@@ -957,6 +941,8 @@ https://github.com/aiven-labs/fish-and-chips-and-kafka
 
 Using that free trial link will give an extra 100 USD, making it one month or
 400 USD. And not forgetting the actual free options for PostgreSQL, MySQL and Redis.
+
+-------
 
 Unused Redis slides
 -------------------
