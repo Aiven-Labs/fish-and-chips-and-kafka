@@ -10,12 +10,11 @@ At the very end, there are some links to [Other resources](#other-resources).
 
 **Overview**
 
-* [The demo programs used in the talk](#the-original-demo-programs-used-in=the-talk)
+* [The demo programs used in the
+  talk](#the-original-demo-programs-used-in=the-talk); how to set things up,
+  get started with Aiven for Apache Kafka®. and run the demos.
 
-  Including how to set things up, and get started with Aiven for Apache Kafka®.
-
-* [Other things to do](#other-things-to-do)
-* [Homework solutions](#homework-solutions)
+* [Other things to do](#other-things-to-do) and [Homework solutions](#homework-solutions)
 
   * [Write to PostgreSQL with a JDBC Kafka Connector and JSON](#write-to-postgresql-with-a-jdbc-kafka-connector-and-json)
   * [Is an array of strings a better order structure?](#is-an-array-of-strings-a-better-order-structure)
