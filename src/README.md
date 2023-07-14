@@ -352,20 +352,18 @@ especially the [set up](#set-up).
 ### Our demo code
 
 [`demo5_json_output_to_pg.py`](demo5_json_output_to_pg.py)
+is a version of
+[`demo1_cod_and_chips.py`](demo1_cod_and_chips.py) that also works with a JDBC
+connector to send JSON data to PostgreSQL.
 
-This is based on
-[`demo1_cod_and_chips.py`](demo1_cod_and_chips.py).
-
-We need to make the following changes to the code:
-
-* Add JSON schema information to our messages, since this is needed if we're
-  going to use JSON messages
-* Simplify the message format a bit, since the JDBC connector only supports
-  basic PostgreSQL datatype
-* Add a timestamp, which can be used as a unique key in the database table. We
-  *could* used the `count` value, but that's going to restart from 0 each time
-  we run the demo, and things would fail when we try to insert a record with
-  an already existing key.
+* It add JSON schema information to our messages, so the JDBC connector can
+  understand their content.
+* It simplifies the message format a bit, since the JDBC connector only supports
+  basic PostgreSQL datatypes.
+* It adds a timestamp to the messages, to be used as a unique key in the
+  database table. We *could* used the `count` value, but that's going to
+  restart from 0 each time we run the demo, and things would fail when we try
+  to insert a record with an already existing key.
 
 > **Note** If we were using Avro messages, we could use Karapace to "tell"
 > both ends of the data process what schema was being used for messages, but
