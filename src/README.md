@@ -39,7 +39,9 @@ The demonstrations discussed in the talk:
 
 ### Python version
 
-Python 3.11 is needed for two programs:
+Python 3.11 is needed if you want to run all of the programs.
+
+It's actually only *required* for two programs:
 * [`poc2_textual.py`](poc_textual.py) uses [`asyncio
   TaskGroups`](https://docs.python.org/3/library/asyncio-task.html#task-groups)
   to organise its asynchronous tasks - that's much nicer than previous ways
