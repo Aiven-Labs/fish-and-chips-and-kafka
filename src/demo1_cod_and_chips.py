@@ -8,7 +8,6 @@ Note: writes log messages to the file demo1.log.
 """
 
 import asyncio
-import json
 import logging
 import os
 import pathlib
@@ -30,7 +29,7 @@ from demo_helpers import DemoWidget
 from demo_helpers import PREP_FREQ_MIN, PREP_FREQ_MAX
 
 
-DEMO_ID = 3
+DEMO_ID = 1
 LOG_FILE = f'demo{DEMO_ID}.log'
 TOPIC_NAME = f'demo{DEMO_ID}-cod-and-chips'
 

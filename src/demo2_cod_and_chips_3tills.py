@@ -8,7 +8,6 @@ Note: writes log messages to the file demo2.log.
 """
 
 import asyncio
-import json
 import logging
 import os
 import pathlib

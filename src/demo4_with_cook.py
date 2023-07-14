@@ -9,7 +9,6 @@ Note: writes log messages to the file demo4.log.
 
 import asyncio
 import itertools
-import json
 import logging
 import os
 import pathlib
