@@ -1,18 +1,10 @@
 # Demo code for "Fish and Chips and Apache Kafka®"
 
-The first part of this README talks about the original demo programs, written
-for the talk itself.
-
-The [second part](#homework-solutions) looks at the "homework" suggestions, and provides some code
-relating to them.
-
-At the very end, there are some links to [Other resources](#other-resources).
-
 **Overview**
 
 * [The demo programs used in the
   talk](#the-original-demo-programs-used-in=the-talk): how to set things up,
-  get started with Aiven for Apache Kafka®, and run the demos.
+  get started with Aiven for Apache Kafka®, and run the demos written for the talk.
 
 * [Other things to do](#other-things-to-do) and [Homework solutions](#homework-solutions)
 
