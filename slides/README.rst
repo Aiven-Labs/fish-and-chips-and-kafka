@@ -90,6 +90,13 @@ for qrencode_, which I installed with ``brew install qrencode`` on my Mac.
 
 .. _qrencode: https://fukuchi.org/works/qrencode/
 
+The demo videos
+~~~~~~~~~~~~~~~
+
+The videos of the demos (used during the talk) are in a separate
+repository, at https://github.com/Aiven-Labs/fish-and-chips-and-kafka-videos
+(it seems unfair to make you download them from here if you're not interested).
+
 
 Making the PDF files
 ~~~~~~~~~~~~~~~~~~~~
