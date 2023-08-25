@@ -53,7 +53,7 @@ It's actually only *required* for two programs:
   TaskGroups`](https://docs.python.org/3/library/asyncio-task.html#task-groups)
   to organise its asynchronous tasks - that's much nicer than previous ways
   of doing it.
-* [`./demo3_cod_and_chips_3tills_2preparers.py`](./demo3_cod_and_chips_3tills_2preparers.py)
+* [`demo3_cod_and_chips_3tills_2preparers.py`](demo3_cod_and_chips_3tills_2preparers.py)
   uses an
   [`asyncio.Barrier`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier)
   to synchronize when the producers and consumers start message handling.
