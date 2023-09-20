@@ -7,8 +7,8 @@ and Apache Kafka®", which will be given at [EuroPython
 presented by [Tibs](https://aiven.io/Tibs).
 
 See the [video recording on
-youtube](https://github.com/Aiven-Labs/fish-and-chips-and-kafka) (and please
-read the corrections below the video).
+youtube](https://www.youtube.com/watch?v=T-EF8htxrsc&list=PL8uoeex94UhFcwvAfWHybD7SfNgIUBRo-&index=32)
+(and please read the corrections below the video).
 
 * Slides are in [`slides`](slides)
 * The demonstration programs from the talk are in [`src`](src)

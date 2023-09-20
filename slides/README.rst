@@ -14,7 +14,7 @@ presented by Tibs_
 
 See the `video recording on youtube`_ (and please read the corrections below the video).
 
-.. _`video recording on youtube: https://github.com/Aiven-Labs/fish-and-chips-and-kafka
+.. _`video recording on youtube: https://www.youtube.com/watch?v=T-EF8htxrsc&list=PL8uoeex94UhFcwvAfWHybD7SfNgIUBRo-&index=32
 
 Useful links
 ~~~~~~~~~~~~
