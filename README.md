@@ -6,7 +6,9 @@ and Apache Kafka®", which will be given at [EuroPython
 2023](https://ep2023.europython.eu/session/fish-and-chips-and-apache-kafka),
 presented by [Tibs](https://aiven.io/Tibs).
 
-A link to the video recording will be provided when that is available.
+See the [video recording on
+youtube](https://github.com/Aiven-Labs/fish-and-chips-and-kafka) (and please
+read the corrections below the video).
 
 * Slides are in [`slides`](slides)
 * The demonstration programs from the talk are in [`src`](src)

@@ -4,7 +4,7 @@ Slides for "Fish and Chips and Apache Kafka®"
 
 These are the slides for the talk
 "Fish and Chips and Apache Kafka®",
-which will be given at `EuroPython 2023`_
+which was given at `EuroPython 2023`_
 on `Friday 21st July 2023`_,
 presented by Tibs_
 
@@ -12,7 +12,9 @@ presented by Tibs_
 .. _`Friday 21st July 2023`: https://ep2023.europython.eu/session/fish-and-chips-and-apache-kafka
 .. _Tibs: https://aiven.io/Tibs
 
-A link to the video recording will be provided when that is available.
+See the `video recording on youtube`_ (and please read the corrections below the video).
+
+.. _`video recording on youtube: https://github.com/Aiven-Labs/fish-and-chips-and-kafka
 
 Useful links
 ~~~~~~~~~~~~
