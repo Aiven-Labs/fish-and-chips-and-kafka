@@ -117,7 +117,7 @@ Install the requirements using the ``requirements.txt`` file::
 
 Or alternatively, be explicit::
 
-  pip install rst2pdf docutils pygments svglibq
+  pip install rst2pdf docutils pygments svglib
 
 You will also need an appropriate ``make`` program if you want to use the
 Makefile.
