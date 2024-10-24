@@ -46,7 +46,7 @@ The demonstrations discussed in the talk:
 
 ### Python version
 
-Python 3.11 is needed if you want to run all of the programs.
+Python 3.11 or later is needed if you want to run all of the programs.
 
 It's actually only *required* for two programs:
 * [`poc1_use_kafka.py`](poc1_use_kafka.py) uses [`asyncio
@@ -460,8 +460,10 @@ We're now going to follow the instructions at
 [Create a JDBC sink connector to PostgreSQL® on a topic with a JSON schema](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink#example-create-a-jdbc-sink-connector-to-postgresql-on-a-topic-with-a-json-schema)
 
 We need the values for `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_SSL_MODE`,
-`DB_USERNAME` and `DB_PASSWORD` from the Overview part of the PostgreSQL
-service page, so we can create a file called `pg_json_sink.json`, using the
+`DB_USERNAME` and `DB_PASSWORD`.
+To find those, go to the service page for the Postgres service in the Aiven Console,
+select the Overview, and look in the Connection Information.
+We use those values to create a file called `pg_avro_sink.json`, using the
 following as a template:
 ```json
 {
@@ -750,8 +752,16 @@ file](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/jdbc-sink#de
 which assumes Avro and Karapace.
 
 We need the values for `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_SSL_MODE`,
-`DB_USERNAME` and `DB_PASSWORD` from the Overview part of the PostgreSQL
-service page, so we can create a file called `pg_avro_sink.json`, using the
+`DB_USERNAME` and `DB_PASSWORD`.
+To find those, go to the service page for the Postgres service in the Aiven Console,
+select the Overview, and look in the Connection Information.
+
+We need the values `APACHE_KAFKA_HOST`, `SCHEMA_REGISTRY_PORT`, `SCHEMA_REGISTRY_USER` and
+`SCHEMA_REGISTRY_PASSWORD`.
+To find those, go to the service page for the Kafka service in the Aiven Console,
+select the Overview, and look in the **Schema Registry** tab of the Connection Information.
+
+We use those values to create a file called `pg_avro_sink.json`, using the
 following as a template:
 ``` json
 {
@@ -853,7 +863,7 @@ normal, we can stop it by typing `q`.
 If we go back to the database, we can check the content of the table.
 For instance:
 ```sql
-select * from demo5_cod_and_chips ;
+select * from demo6_cod_and_chips ;
 ```
 
 The results should be something like the following (depending on what the
