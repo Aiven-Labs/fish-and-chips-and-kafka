@@ -14,9 +14,8 @@ from ssl import SSLContext
 
 import aiokafka
 
-# We need kafka-python for admin tasks
-from kafka.admin import KafkaAdminClient, NewTopic
-from kafka.errors import TopicAlreadyExistsError
+from aiokafka.admin import AIOKafkaAdminClient, NewTopic
+from aiokafka.errors import TopicAlreadyExistsError
 
 from rich.panel import Panel
 from textual.app import RenderResult
@@ -35,8 +34,15 @@ PREP_FREQ_MAX = 1.0
 COOK_FREQ_MIN = 3.0
 COOK_FREQ_MAX = 3.2
 
-
+# An initial port of the kafka-python code to create a topic, into aiokafka code
+# This means we're going to keep our `setup_topics` function as a sync function,
+# and wrap the aiokafka async mechanisms - this is almost certainly not the best
+# way to do this, but it lets us keep the calling interface the same...
 def setup_topics(kafka_uri, ssl_context, topic_dict):
+    with asyncio.Runner() as runner:
+        runner.run(_setup_topics(kafka_uri, ssl_context, topic_dict))
+
+async def _setup_topics(kafka_uri, ssl_context, topic_dict):
     """Make sure that the topi we want exists, with the correct number of
     partitions.
 
@@ -46,11 +52,12 @@ def setup_topics(kafka_uri, ssl_context, topic_dict):
     """
 
     # For this we still need to use the more traditional kafka-python library
-    admin = KafkaAdminClient(
+    admin = AIOKafkaAdminClient(
         bootstrap_servers=kafka_uri,
         security_protocol="SSL",
         ssl_context=ssl_context,
     )
+    await admin.start()
 
     logging.info(f'Making sure topics {", ".join(topic_dict.keys())} now exist')
     topics = [
@@ -58,20 +65,20 @@ def setup_topics(kafka_uri, ssl_context, topic_dict):
         for name, num_partitions in topic_dict.items()
     ]
     try:
-        admin.create_topics(topics)
+        await admin.create_topics(topics)
     except TopicAlreadyExistsError:
         # If the topics already exist, good
         pass
 
     count = 0
     while count < 10:
-        topics = admin.list_topics()
+        topics = await admin.list_topics()
         logging.info(f'Topics: {topics}')
         names = set(topic_dict.keys())
         if names.issubset(topics):  # All our topic names are present
             return
         count += 1
-        time.sleep(1)
+        await asyncio.sleep(1)
 
 
 class OrderNumber:
