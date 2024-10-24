@@ -765,7 +765,7 @@ following as a template:
     "auto.create": "false",
     "auto.evolve": "false",
     "insert.mode": "insert",
-    "delete.enabled": "true",
+    "delete.enabled": "false",
     "pk.mode": "record_key",
     "pk.fields": "order_time",
     "key.converter": "io.confluent.connect.avro.AvroConverter",
