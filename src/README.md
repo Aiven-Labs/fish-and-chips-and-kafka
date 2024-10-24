@@ -976,6 +976,7 @@ for helping me understand some things when I was first writing these demo progra
 --------
 
 ![CC-Attribution-ShareAlike image](../slides/images/cc-attribution-sharealike-88x31.png)
+
 This talk and its related files are released under a
 [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
 The source code for the demo programs is dual-licensed as CC Attribution Share Alike and MIT.
